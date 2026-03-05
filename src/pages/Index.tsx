@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import CrmSidebar, { CrmPage } from "@/components/crm/CrmSidebar";
 import DashboardPage from "@/components/crm/DashboardPage";
 import LancamentosPage from "@/components/crm/LancamentosPage";
@@ -8,95 +8,92 @@ import ConfiguracoesPage from "@/components/crm/ConfiguracoesPage";
 import MetaModal from "@/components/crm/MetaModal";
 import LancamentoModal from "@/components/crm/LancamentoModal";
 import {
-  getDatabase, addMeta, updateMeta, deleteMeta,
+  fetchDatabase, addMeta, updateMeta, deleteMeta,
   addLancamento, updateLancamento, deleteLancamento,
-  exportarDadosJSON, exportarCSV, importarDados,
-  fazerBackup, restaurarBackup, limparTodosDados,
+  exportarDadosJSON, exportarCSV,
   Meta, Lancamento, CrmDatabase
 } from "@/lib/crm-data";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { LogOut } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const Index = () => {
+  const { user, signOut } = useAuth();
   const [page, setPage] = useState<CrmPage>("dashboard");
-  const [db, setDb] = useState<CrmDatabase>(getDatabase);
+  const [db, setDb] = useState<CrmDatabase>({ metas: [], lancamentos: [] });
+  const [loading, setLoading] = useState(true);
 
-  // Meta modal
   const [metaModalOpen, setMetaModalOpen] = useState(false);
   const [editingMeta, setEditingMeta] = useState<Meta | null>(null);
-
-  // Lancamento modal
   const [lancModalOpen, setLancModalOpen] = useState(false);
   const [editingLanc, setEditingLanc] = useState<Lancamento | null>(null);
 
-  const refresh = useCallback(() => setDb(getDatabase()), []);
+  const refresh = useCallback(async () => {
+    try {
+      const data = await fetchDatabase();
+      setDb(data);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  // Meta CRUD
-  const handleSaveMeta = (nome: string, valor: number, descricao: string) => {
-    if (editingMeta) updateMeta(editingMeta.id, nome, valor, descricao);
-    else addMeta(nome, valor, descricao);
-    refresh();
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const handleSaveMeta = async (nome: string, valor: number, descricao: string) => {
+    if (editingMeta) await updateMeta(editingMeta.id, nome, valor, descricao);
+    else await addMeta(nome, valor, descricao);
+    await refresh();
     setMetaModalOpen(false);
     setEditingMeta(null);
     toast.success(editingMeta ? "Meta atualizada!" : "Meta criada!");
   };
 
   const handleEditMeta = (meta: Meta) => { setEditingMeta(meta); setMetaModalOpen(true); };
-  const handleDeleteMeta = (id: string) => {
+  const handleDeleteMeta = async (id: string) => {
     if (confirm("Tem certeza que deseja remover esta meta?")) {
-      deleteMeta(id); refresh(); toast.success("Meta removida!");
+      await deleteMeta(id); await refresh(); toast.success("Meta removida!");
     }
   };
 
-  // Lancamento CRUD
-  const handleSaveLanc = (data: string, bruto: number, desconto: number) => {
-    if (editingLanc) updateLancamento(editingLanc.id, data, bruto, desconto);
-    else addLancamento(data, bruto, desconto);
-    refresh();
+  const handleSaveLanc = async (data: string, bruto: number, desconto: number) => {
+    if (editingLanc) await updateLancamento(editingLanc.id, data, bruto, desconto);
+    else await addLancamento(data, bruto, desconto);
+    await refresh();
     setLancModalOpen(false);
     setEditingLanc(null);
     toast.success(editingLanc ? "Lançamento atualizado!" : "Lançamento salvo!");
   };
 
-  const handleAddLancInline = (data: string, bruto: number, desconto: number) => {
-    addLancamento(data, bruto, desconto);
-    refresh();
+  const handleAddLancInline = async (data: string, bruto: number, desconto: number) => {
+    await addLancamento(data, bruto, desconto);
+    await refresh();
     toast.success("Lançamento salvo!");
   };
 
   const handleEditLanc = (l: Lancamento) => { setEditingLanc(l); setLancModalOpen(true); };
-  const handleDeleteLanc = (id: string) => {
+  const handleDeleteLanc = async (id: string) => {
     if (confirm("Tem certeza que deseja remover este lançamento?")) {
-      deleteLancamento(id); refresh(); toast.success("Lançamento removido!");
+      await deleteLancamento(id); await refresh(); toast.success("Lançamento removido!");
     }
   };
 
-  // Config
-  const handleBackup = () => { fazerBackup(); refresh(); toast.success("Backup realizado!"); };
-  const handleRestore = () => {
-    if (confirm("Restaurar backup? Os dados atuais serão substituídos.")) {
-      if (restaurarBackup()) { refresh(); toast.success("Backup restaurado!"); }
-      else toast.error("Nenhum backup disponível");
-    }
-  };
-  const handleClearAll = () => {
-    if (confirm("⚠️ Todos os dados serão deletados permanentemente. Continuar?")) {
-      limparTodosDados(); refresh(); toast.success("Dados limpos!");
-    }
-  };
+  const handleExport = async () => { await exportarDadosJSON(); };
+  const handleExportCSV = async () => { await exportarCSV(); };
 
-  const handleImport = async () => {
-    const input = document.createElement("input");
-    input.type = "file"; input.accept = ".json";
-    input.onchange = async () => {
-      if (input.files?.[0]) {
-        try {
-          await importarDados(input.files[0]);
-          refresh(); toast.success("Dados importados!");
-        } catch { toast.error("Arquivo inválido"); }
-      }
-    };
-    input.click();
-  };
+  const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || "";
+  const avatarUrl = user?.user_metadata?.avatar_url || "";
+  const initials = displayName.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-muted-foreground">Carregando...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -105,31 +102,42 @@ const Index = () => {
       <main className="ml-[250px] flex-1 flex flex-col">
         <header className="bg-card border-b border-border px-8 h-16 flex items-center justify-between sticky top-0 z-40">
           <div />
-          <button onClick={() => setPage("configuracoes")} className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground hover:bg-border transition-colors">
-            ⚙️
-          </button>
+          <div className="flex items-center gap-3">
+            <Avatar className="w-8 h-8">
+              <AvatarImage src={avatarUrl} alt={displayName} />
+              <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+            </Avatar>
+            <span className="text-sm font-medium text-card-foreground hidden sm:block">{displayName}</span>
+            <button
+              onClick={signOut}
+              className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground hover:bg-border transition-colors"
+              title="Sair"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
         </header>
 
         <div className="flex-1 p-8">
           {page === "dashboard" && (
             <DashboardPage db={db} onOpenLancamento={() => { setEditingLanc(null); setLancModalOpen(true); }}
-              onExport={exportarDadosJSON} onImport={handleImport}
+              onExport={handleExport} onImport={() => {}}
               onEditMeta={handleEditMeta} onDeleteMeta={handleDeleteMeta} />
           )}
           {page === "lancamentos" && (
             <LancamentosPage db={db} onAdd={handleAddLancInline}
               onEdit={handleEditLanc} onDelete={handleDeleteLanc}
-              onExportCSV={exportarCSV} onOpenModal={() => { setEditingLanc(null); setLancModalOpen(true); }} />
+              onExportCSV={handleExportCSV} onOpenModal={() => { setEditingLanc(null); setLancModalOpen(true); }} />
           )}
           {page === "metas" && (
             <MetasPage db={db} onAdd={() => { setEditingMeta(null); setMetaModalOpen(true); }}
               onEdit={handleEditMeta} onDelete={handleDeleteMeta} />
           )}
           {page === "relatorios" && (
-            <RelatoriosPage db={db} onExportExcel={exportarDadosJSON} />
+            <RelatoriosPage db={db} onExportExcel={handleExport} />
           )}
           {page === "configuracoes" && (
-            <ConfiguracoesPage db={db} onBackup={handleBackup} onRestore={handleRestore} onClearAll={handleClearAll} />
+            <ConfiguracoesPage db={db} onRefresh={refresh} />
           )}
         </div>
 
