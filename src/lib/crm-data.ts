@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export interface Meta {
   id: string;
   nome: string;
@@ -16,23 +18,6 @@ export interface Lancamento {
 export interface CrmDatabase {
   metas: Meta[];
   lancamentos: Lancamento[];
-}
-
-const DB_KEY = 'crm_data';
-const BACKUP_KEY = 'crm_backup';
-const BACKUP_DATE_KEY = 'crm_backup_date';
-
-function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
-}
-
-export function getDatabase(): CrmDatabase {
-  const data = localStorage.getItem(DB_KEY);
-  return data ? JSON.parse(data) : { metas: [], lancamentos: [] };
-}
-
-export function saveDatabase(db: CrmDatabase) {
-  localStorage.setItem(DB_KEY, JSON.stringify(db));
 }
 
 export function formatCurrency(value: number): string {
@@ -60,7 +45,6 @@ export function calcularVendasNecessarias(meta: Meta, lancamentos: Lancamento[])
   const vendasNecessarias = diasRestantes > 0 ? vendasRestantes / diasRestantes : 0;
   const percentual = Math.min((totalVendido / meta.valor) * 100, 100);
   const metaBatida = totalVendido >= meta.valor;
-
   return { totalVendido, vendasRestantes, diasRestantes, vendasNecessarias, percentual, metaBatida };
 }
 
@@ -69,78 +53,71 @@ export function getDiasMes(): number {
   return new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
 }
 
-// CRUD Metas
-export function addMeta(nome: string, valor: number, descricao: string): CrmDatabase {
-  const db = getDatabase();
-  db.metas.push({ id: generateId(), nome, valor, descricao });
-  saveDatabase(db);
-  return db;
+// ---- Supabase data layer ----
+
+export async function fetchDatabase(): Promise<CrmDatabase> {
+  const [metasRes, lancRes] = await Promise.all([
+    supabase.from('metas').select('*'),
+    supabase.from('lancamentos').select('*'),
+  ]);
+
+  const metas: Meta[] = (metasRes.data || []).map(m => ({
+    id: m.id,
+    nome: m.nome,
+    valor: Number(m.valor),
+    descricao: m.descricao || '',
+  }));
+
+  const lancamentos: Lancamento[] = (lancRes.data || []).map(l => ({
+    id: l.id,
+    data: l.data,
+    valorBruto: Number(l.valor_bruto),
+    desconto: Number(l.desconto),
+    valorLiquido: Number(l.valor_liquido),
+  }));
+
+  return { metas, lancamentos };
 }
 
-export function updateMeta(id: string, nome: string, valor: number, descricao: string): CrmDatabase {
-  const db = getDatabase();
-  const idx = db.metas.findIndex(m => m.id === id);
-  if (idx !== -1) db.metas[idx] = { id, nome, valor, descricao };
-  saveDatabase(db);
-  return db;
+export async function addMeta(nome: string, valor: number, descricao: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  await supabase.from('metas').insert({ user_id: user.id, nome, valor, descricao });
 }
 
-export function deleteMeta(id: string): CrmDatabase {
-  const db = getDatabase();
-  db.metas = db.metas.filter(m => m.id !== id);
-  saveDatabase(db);
-  return db;
+export async function updateMeta(id: string, nome: string, valor: number, descricao: string) {
+  await supabase.from('metas').update({ nome, valor, descricao }).eq('id', id);
 }
 
-// CRUD Lancamentos
-export function addLancamento(data: string, valorBruto: number, desconto: number): CrmDatabase {
-  const db = getDatabase();
-  db.lancamentos.push({ id: generateId(), data, valorBruto, desconto, valorLiquido: valorBruto - desconto });
-  saveDatabase(db);
-  return db;
+export async function deleteMeta(id: string) {
+  await supabase.from('metas').delete().eq('id', id);
 }
 
-export function updateLancamento(id: string, data: string, valorBruto: number, desconto: number): CrmDatabase {
-  const db = getDatabase();
-  const idx = db.lancamentos.findIndex(l => l.id === id);
-  if (idx !== -1) db.lancamentos[idx] = { id, data, valorBruto, desconto, valorLiquido: valorBruto - desconto };
-  saveDatabase(db);
-  return db;
+export async function addLancamento(data: string, valorBruto: number, desconto: number) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  await supabase.from('lancamentos').insert({
+    user_id: user.id,
+    data,
+    valor_bruto: valorBruto,
+    desconto,
+  });
 }
 
-export function deleteLancamento(id: string): CrmDatabase {
-  const db = getDatabase();
-  db.lancamentos = db.lancamentos.filter(l => l.id !== id);
-  saveDatabase(db);
-  return db;
+export async function updateLancamento(id: string, data: string, valorBruto: number, desconto: number) {
+  await supabase.from('lancamentos').update({
+    data,
+    valor_bruto: valorBruto,
+    desconto,
+  }).eq('id', id);
 }
 
-// Backup
-export function fazerBackup() {
-  const db = getDatabase();
-  localStorage.setItem(BACKUP_KEY, JSON.stringify(db));
-  localStorage.setItem(BACKUP_DATE_KEY, new Date().toISOString());
+export async function deleteLancamento(id: string) {
+  await supabase.from('lancamentos').delete().eq('id', id);
 }
 
-export function restaurarBackup(): boolean {
-  const backup = localStorage.getItem(BACKUP_KEY);
-  if (!backup) return false;
-  saveDatabase(JSON.parse(backup));
-  return true;
-}
-
-export function getUltimoBackup(): string | null {
-  return localStorage.getItem(BACKUP_DATE_KEY);
-}
-
-export function limparTodosDados() {
-  localStorage.removeItem(DB_KEY);
-  localStorage.removeItem(BACKUP_KEY);
-  localStorage.removeItem(BACKUP_DATE_KEY);
-}
-
-export function exportarDadosJSON() {
-  const db = getDatabase();
+export async function exportarDadosJSON() {
+  const db = await fetchDatabase();
   const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -150,8 +127,8 @@ export function exportarDadosJSON() {
   URL.revokeObjectURL(url);
 }
 
-export function exportarCSV() {
-  const db = getDatabase();
+export async function exportarCSV() {
+  const db = await fetchDatabase();
   let csv = 'Data,Valor Bruto,Desconto,Valor Líquido\n';
   db.lancamentos.forEach(l => {
     csv += `"${formatDate(l.data)}","${l.valorBruto}","${l.desconto}","${l.valorLiquido}"\n`;
@@ -163,24 +140,4 @@ export function exportarCSV() {
   a.download = `lancamentos-${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-}
-
-export function importarDados(file: File): Promise<CrmDatabase> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target?.result as string);
-        if (data.metas && data.lancamentos) {
-          saveDatabase(data);
-          resolve(data);
-        } else {
-          reject(new Error('Arquivo inválido'));
-        }
-      } catch (err) {
-        reject(err);
-      }
-    };
-    reader.readAsText(file);
-  });
 }
