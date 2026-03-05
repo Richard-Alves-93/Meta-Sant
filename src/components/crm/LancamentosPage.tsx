@@ -1,0 +1,149 @@
+import { useState, useMemo } from "react";
+import { CrmDatabase, formatCurrency, formatDate, Lancamento } from "@/lib/crm-data";
+import KpiCard from "./KpiCard";
+import { Pencil, Trash2, DollarSign, TrendingDown, Wallet } from "lucide-react";
+
+interface LancamentosPageProps {
+  db: CrmDatabase;
+  onAdd: (data: string, bruto: number, desconto: number) => void;
+  onEdit: (lancamento: Lancamento) => void;
+  onDelete: (id: string) => void;
+  onExportCSV: () => void;
+  onOpenModal: () => void;
+}
+
+const LancamentosPage = ({ db, onAdd, onEdit, onDelete, onExportCSV, onOpenModal }: LancamentosPageProps) => {
+  const [filterMonth, setFilterMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [data, setData] = useState(() => new Date().toISOString().split("T")[0]);
+  const [bruto, setBruto] = useState("");
+  const [desconto, setDesconto] = useState("");
+
+  const filtered = useMemo(() => {
+    let list = db.lancamentos;
+    if (filterMonth) {
+      const [y, m] = filterMonth.split("-");
+      list = list.filter(l => {
+        const d = new Date(l.data);
+        return d.getFullYear() === parseInt(y) && d.getMonth() + 1 === parseInt(m);
+      });
+    }
+    return [...list].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+  }, [db, filterMonth]);
+
+  const totalBruto = filtered.reduce((s, l) => s + l.valorBruto, 0);
+  const totalDesconto = filtered.reduce((s, l) => s + l.desconto, 0);
+  const totalLiquido = filtered.reduce((s, l) => s + l.valorLiquido, 0);
+
+  const handleSave = () => {
+    const v = parseFloat(bruto);
+    if (!data || !v || v <= 0) return;
+    onAdd(data, v, parseFloat(desconto) || 0);
+    setData(new Date().toISOString().split("T")[0]);
+    setBruto(""); setDesconto("");
+  };
+
+  return (
+    <div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground mb-1">Lançamentos</h1>
+        <p className="text-muted-foreground text-sm">Registre o faturamento diário. Um lançamento por dia atualiza todas as metas.</p>
+        <div className="flex gap-3 mt-4 flex-wrap">
+          <button onClick={onOpenModal} className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
+            + Lançar venda do dia
+          </button>
+          <button onClick={onExportCSV} className="px-4 py-2.5 rounded-lg bg-card border border-border text-muted-foreground text-sm font-medium hover:bg-secondary transition-colors">
+            📥 Exportar CSV
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-4 mb-6 flex items-center gap-3 flex-wrap">
+        <span className="text-sm font-medium text-muted-foreground">Filtrar por mês:</span>
+        <input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)}
+          className="px-3 py-2 border border-input rounded-lg text-sm bg-card text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-6 shadow-sm mb-6">
+        <h3 className="font-semibold text-card-foreground mb-4">Lançar venda do dia</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-card-foreground">Data</label>
+            <input type="date" value={data} onChange={(e) => setData(e.target.value)}
+              className="w-full px-3 py-2.5 border border-input rounded-lg text-sm bg-card text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-card-foreground">Valor Bruto (R$)</label>
+            <input type="number" value={bruto} onChange={(e) => setBruto(e.target.value)} placeholder="0.00" step="0.01"
+              className="w-full px-3 py-2.5 border border-input rounded-lg text-sm bg-card text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-card-foreground">Desconto (R$)</label>
+            <input type="number" value={desconto} onChange={(e) => setDesconto(e.target.value)} placeholder="0.00" step="0.01"
+              className="w-full px-3 py-2.5 border border-input rounded-lg text-sm bg-card text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+          </div>
+        </div>
+        <div className="bg-success/10 border border-success/30 text-success rounded-lg p-3 text-sm mb-4">
+          ✓ Ao salvar, todas as metas serão atualizadas automaticamente.
+        </div>
+        <div className="flex gap-3">
+          <button onClick={handleSave} className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
+            Salvar lançamento
+          </button>
+          <button onClick={() => { setBruto(""); setDesconto(""); }} className="px-4 py-2.5 rounded-lg bg-card border border-border text-muted-foreground text-sm font-medium hover:bg-secondary transition-colors">
+            Limpar
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+        <KpiCard label="Total Bruto" value={formatCurrency(totalBruto)} icon={<DollarSign size={18} />} />
+        <KpiCard label="Total Desconto" value={formatCurrency(totalDesconto)} icon={<TrendingDown size={18} />} />
+        <KpiCard label="Total Líquido" value={formatCurrency(totalLiquido)} icon={<Wallet size={18} />} />
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+        <h3 className="font-semibold text-card-foreground mb-4">Lançamentos</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left text-xs font-semibold text-muted-foreground py-3 px-4">Data</th>
+                <th className="text-left text-xs font-semibold text-muted-foreground py-3 px-4">Valor Bruto</th>
+                <th className="text-left text-xs font-semibold text-muted-foreground py-3 px-4">Desconto</th>
+                <th className="text-left text-xs font-semibold text-muted-foreground py-3 px-4">Valor Líquido</th>
+                <th className="text-left text-xs font-semibold text-muted-foreground py-3 px-4">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr><td colSpan={5} className="text-center py-8 text-muted-foreground text-sm">Nenhum lançamento registrado</td></tr>
+              ) : filtered.map(l => (
+                <tr key={l.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
+                  <td className="py-3 px-4 text-sm">{formatDate(l.data)}</td>
+                  <td className="py-3 px-4 text-sm">{formatCurrency(l.valorBruto)}</td>
+                  <td className="py-3 px-4 text-sm text-warning">{formatCurrency(l.desconto)}</td>
+                  <td className="py-3 px-4 text-sm font-semibold text-success">{formatCurrency(l.valorLiquido)}</td>
+                  <td className="py-3 px-4">
+                    <div className="flex gap-1">
+                      <button onClick={() => onEdit(l)} className="p-1.5 rounded-md bg-secondary text-muted-foreground hover:bg-border transition-colors">
+                        <Pencil size={14} />
+                      </button>
+                      <button onClick={() => onDelete(l.id)} className="p-1.5 rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default LancamentosPage;
