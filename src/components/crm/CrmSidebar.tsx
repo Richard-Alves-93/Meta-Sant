@@ -5,6 +5,7 @@ export type CrmPage = "dashboard" | "lancamentos" | "metas" | "relatorios" | "co
 interface CrmSidebarProps {
   currentPage: CrmPage;
   onNavigate: (page: CrmPage) => void;
+  logoUrl?: string | null;
 }
 
 const navItems: { page: CrmPage; label: string; icon: React.ReactNode }[] = [
@@ -15,14 +16,24 @@ const navItems: { page: CrmPage; label: string; icon: React.ReactNode }[] = [
   { page: "configuracoes", label: "Configurações", icon: <Settings size={20} /> },
 ];
 
-const CrmSidebar = ({ currentPage, onNavigate }: CrmSidebarProps) => {
+const CrmSidebar = ({ currentPage, onNavigate, logoUrl }: CrmSidebarProps) => {
   return (
     <aside className="fixed left-0 top-0 h-screen w-[250px] bg-card border-r border-border flex flex-col z-50">
-      <div className="flex items-center gap-3 px-6 py-6">
-        <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-          <span className="text-primary-foreground text-xs font-bold">CR</span>
-        </div>
-        <span className="font-bold text-card-foreground text-lg">CRM</span>
+      <div className="flex items-center gap-3 px-6 py-6 h-[88px]">
+        {logoUrl ? (
+          <img 
+            src={logoUrl} 
+            alt="Logo CRM" 
+            className="max-h-12 w-auto max-w-full object-contain" 
+          />
+        ) : (
+          <>
+            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
+              <span className="text-primary-foreground text-xs font-bold">CR</span>
+            </div>
+            <span className="font-bold text-card-foreground text-lg truncate">CRM</span>
+          </>
+        )}
       </div>
 
       <nav className="flex flex-col gap-1 px-3 flex-1">

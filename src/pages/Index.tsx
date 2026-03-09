@@ -23,6 +23,9 @@ const Index = () => {
   const [page, setPage] = useState<CrmPage>("dashboard");
   const [db, setDb] = useState<CrmDatabase>({ metas: [], lancamentos: [] });
   const [loading, setLoading] = useState(true);
+  const [customLogo, setCustomLogo] = useState<string | null>(() => {
+    return localStorage.getItem('crm_custom_logo');
+  });
 
   const [metaModalOpen, setMetaModalOpen] = useState(false);
   const [editingMeta, setEditingMeta] = useState<Meta | null>(null);
@@ -97,7 +100,7 @@ const Index = () => {
 
   return (
     <div className="flex min-h-screen">
-      <CrmSidebar currentPage={page} onNavigate={setPage} />
+      <CrmSidebar currentPage={page} onNavigate={setPage} logoUrl={customLogo} />
 
       <main className="ml-[250px] flex-1 flex flex-col">
         <header className="bg-card border-b border-border px-8 h-16 flex items-center justify-between sticky top-0 z-40">
@@ -137,7 +140,7 @@ const Index = () => {
             <RelatoriosPage db={db} onExportExcel={handleExport} />
           )}
           {page === "configuracoes" && (
-            <ConfiguracoesPage db={db} onRefresh={refresh} />
+            <ConfiguracoesPage db={db} onRefresh={refresh} customLogo={customLogo} onLogoChange={setCustomLogo} />
           )}
         </div>
 

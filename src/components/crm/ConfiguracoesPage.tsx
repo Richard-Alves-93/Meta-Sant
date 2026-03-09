@@ -3,9 +3,29 @@ import { CrmDatabase, exportarDadosJSON, exportarCSV } from "@/lib/crm-data";
 interface ConfiguracoesPageProps {
   db: CrmDatabase;
   onRefresh: () => Promise<void>;
+  customLogo: string | null;
+  onLogoChange: (logo: string | null) => void;
 }
 
-const ConfiguracoesPage = ({ db, onRefresh }: ConfiguracoesPageProps) => {
+const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: ConfiguracoesPageProps) => {
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        localStorage.setItem('crm_custom_logo', base64String);
+        onLogoChange(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    localStorage.removeItem('crm_custom_logo');
+    onLogoChange(null);
+  };
+
   return (
     <div>
       <div className="mb-8">
@@ -14,6 +34,45 @@ const ConfiguracoesPage = ({ db, onRefresh }: ConfiguracoesPageProps) => {
       </div>
 
       <div className="space-y-6">
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+          <h3 className="font-semibold text-card-foreground mb-4">🎨 Personalização</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">Logotipo da Barra Lateral</label>
+              <div className="flex items-center gap-6">
+                <div className="w-40 h-20 border-2 border-dashed border-border rounded-lg flex items-center justify-center bg-secondary/50 overflow-hidden relative group">
+                  {customLogo ? (
+                    <>
+                      <img src={customLogo} alt="Logo Preview" className="max-h-full max-w-full object-contain p-2" />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={handleRemoveLogo} className="text-white text-xs font-semibold bg-red-500/80 px-2 py-1 rounded hover:bg-red-500">
+                          Remover
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Sem imagem</span>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="block w-full text-sm text-slate-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-md file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-primary file:text-primary-foreground
+                      hover:file:opacity-90 cursor-pointer"
+                  />
+                  <p className="mt-2 text-xs text-muted-foreground">Recomendado: Imagens com fundo transparente (PNG).</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
           <h3 className="font-semibold text-card-foreground mb-2">📥 Exportar Dados</h3>
           <p className="text-sm text-muted-foreground mb-4">Exporte seus dados em JSON ou CSV.</p>
