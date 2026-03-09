@@ -142,7 +142,7 @@ const Index = () => {
         </div>
 
         <footer className="bg-card border-t border-border py-4 px-8 text-center text-xs text-muted-foreground">
-          © 2026 CRM Dashboard desenvolvido por <a href="https://wa.me/5551991840532" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline transition-colors font-medium">Richard Alves</a>. Todos os direitos reservados.
+          © 2026 CRM Dashboard desenvolvido por <a href="https://api.whatsapp.com/send?phone=5551991840532" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline transition-colors font-medium">Richard Alves</a>. Todos os direitos reservados.
         </footer>
       </main>
 
