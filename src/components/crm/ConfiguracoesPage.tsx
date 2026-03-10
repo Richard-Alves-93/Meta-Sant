@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CrmDatabase, exportarDadosJSON, exportarCSV, deleteMeta, deleteLancamento, addMeta, addLancamento } from "@/lib/crm-data";
+import { CrmDatabase, exportarDadosJSON, deleteMeta, deleteLancamento, addMeta, addLancamento } from "@/lib/crm-data";
 import { hexToHslStr } from "@/lib/colors";
 import { toast } from "sonner";
 
@@ -184,9 +184,6 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
             </button>
             <button onClick={() => document.getElementById("import-backup-input")?.click()} className="px-4 py-2.5 rounded-lg bg-card border border-border text-muted-foreground text-sm font-medium hover:bg-secondary transition-colors">
               📤 Restaurar Backup
-            </button>
-            <button onClick={exportarCSV} className="px-4 py-2.5 rounded-lg bg-card border border-border text-muted-foreground text-sm font-medium hover:bg-secondary transition-colors">
-              📊 Exportar Planilha CSV
             </button>
             <input id="import-backup-input" type="file" accept=".json" className="hidden" onChange={handleImportBackup} />
           </div>

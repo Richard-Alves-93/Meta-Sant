@@ -136,21 +136,6 @@ export async function exportarDadosJSON() {
   URL.revokeObjectURL(url);
 }
 
-export async function exportarCSV() {
-  const db = await fetchDatabase();
-  let csv = 'Data,Valor Bruto,Desconto,Valor Líquido\n';
-  db.lancamentos.forEach(l => {
-    csv += `"${formatDate(l.data)}","${l.valorBruto}","${l.desconto}","${l.valorLiquido}"\n`;
-  });
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `lancamentos-${new Date().toISOString().split('T')[0]}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 export async function exportarExcel() {
   const db = await fetchDatabase();
   const dados = db.lancamentos.map(l => ({
