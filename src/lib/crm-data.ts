@@ -118,7 +118,16 @@ export async function deleteLancamento(id: string) {
 
 export async function exportarDadosJSON() {
   const db = await fetchDatabase();
-  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const backup = {
+    versao: 1,
+    dataHora: new Date().toISOString(),
+    config: {
+      logo: localStorage.getItem('crm_custom_logo'),
+      primaryColor: localStorage.getItem('crm_custom_primary_color')
+    },
+    db: db
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
