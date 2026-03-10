@@ -141,7 +141,7 @@ const Index = () => {
           {page === "lancamentos" && (
             <LancamentosPage db={db} onAdd={handleAddLancInline}
               onEdit={handleEditLanc} onDelete={handleDeleteLanc}
-              onExportCSV={handleExportCSV} onOpenModal={() => { setEditingLanc(null); setLancModalOpen(true); }} />
+              onOpenModal={() => { setEditingLanc(null); setLancModalOpen(true); }} />
           )}
           {page === "metas" && (
             <MetasPage db={db} onAdd={() => { setEditingMeta(null); setMetaModalOpen(true); }}

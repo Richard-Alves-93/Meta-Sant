@@ -8,11 +8,10 @@ interface LancamentosPageProps {
   onAdd: (data: string, bruto: number, desconto: number) => void;
   onEdit: (lancamento: Lancamento) => void;
   onDelete: (id: string) => void;
-  onExportCSV: () => void;
   onOpenModal: () => void;
 }
 
-const LancamentosPage = ({ db, onAdd, onEdit, onDelete, onExportCSV, onOpenModal }: LancamentosPageProps) => {
+const LancamentosPage = ({ db, onAdd, onEdit, onDelete, onOpenModal }: LancamentosPageProps) => {
   const [filterMonth, setFilterMonth] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -53,9 +52,6 @@ const LancamentosPage = ({ db, onAdd, onEdit, onDelete, onExportCSV, onOpenModal
         <div className="flex gap-3 mt-4 flex-wrap">
           <button onClick={onOpenModal} className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
             + Lançar venda do dia
-          </button>
-          <button onClick={onExportCSV} className="px-4 py-2.5 rounded-lg bg-card border border-border text-muted-foreground text-sm font-medium hover:bg-secondary transition-colors">
-            📥 Exportar CSV
           </button>
         </div>
       </div>
