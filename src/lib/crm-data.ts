@@ -141,3 +141,19 @@ export async function exportarCSV() {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+export async function exportarExcel() {
+  const db = await fetchDatabase();
+  const dados = db.lancamentos.map(l => ({
+    Data: formatDate(l.data),
+    'Valor Bruto': l.valorBruto,
+    Desconto: l.desconto,
+    'Valor Líquido': l.valorLiquido
+  }));
+  
+  const XLSX = await import('xlsx');
+  const ws = XLSX.utils.json_to_sheet(dados);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Lançamentos");
+  XLSX.writeFile(wb, `lancamentos-${new Date().toISOString().split('T')[0]}.xlsx`);
+}

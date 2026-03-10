@@ -10,7 +10,7 @@ import LancamentoModal from "@/components/crm/LancamentoModal";
 import {
   fetchDatabase, addMeta, updateMeta, deleteMeta,
   addLancamento, updateLancamento, deleteLancamento,
-  exportarDadosJSON, exportarCSV,
+  exportarDadosJSON, exportarCSV, exportarExcel,
   Meta, Lancamento, CrmDatabase
 } from "@/lib/crm-data";
 import { hexToHslStr } from "@/lib/colors";
@@ -96,6 +96,7 @@ const Index = () => {
 
   const handleExport = async () => { await exportarDadosJSON(); };
   const handleExportCSV = async () => { await exportarCSV(); };
+  const handleExportExcel = async () => { await exportarExcel(); };
 
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || "";
   const avatarUrl = user?.user_metadata?.avatar_url || "";
@@ -148,7 +149,7 @@ const Index = () => {
               onEdit={handleEditMeta} onDelete={handleDeleteMeta} />
           )}
           {page === "relatorios" && (
-            <RelatoriosPage db={db} onExportExcel={handleExport} />
+            <RelatoriosPage db={db} onExportExcel={handleExportExcel} />
           )}
           {page === "configuracoes" && (
             <ConfiguracoesPage db={db} onRefresh={refresh} customLogo={customLogo} onLogoChange={setCustomLogo} />
