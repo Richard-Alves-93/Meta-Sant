@@ -194,7 +194,7 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <div className="text-xs text-muted-foreground mb-1">Versão</div>
-              <div className="font-semibold text-card-foreground">3.0.0</div>
+              <div className="font-semibold text-card-foreground">3.0.1</div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground mb-1">Armazenamento</div>
