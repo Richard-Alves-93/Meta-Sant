@@ -35,21 +35,25 @@ const CrmSidebar = ({ currentPage, onNavigate, logoUrl, isOpen, onClose }: CrmSi
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         <div className="flex items-center justify-between px-6 py-6 h-[88px]">
-          <div className="flex items-center gap-3">
+          <div 
+            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => onNavigate("dashboard")}
+            title="Ir para o Dashboard"
+          >
             {logoUrl ? (
-          <img 
-            src={logoUrl} 
-            alt="Logo CRM" 
-            className="max-h-12 w-auto max-w-full object-contain" 
-          />
-        ) : (
-          <>
-            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
-              <span className="text-primary-foreground text-xs font-bold">CR</span>
-            </div>
-              <span className="font-bold text-card-foreground text-lg truncate">CRM</span>
-            </>
-          )}
+              <img 
+                src={logoUrl} 
+                alt="Logo CRM" 
+                className="max-h-12 w-auto max-w-full object-contain" 
+              />
+            ) : (
+              <>
+                <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
+                  <span className="text-primary-foreground text-xs font-bold">CR</span>
+                </div>
+                <span className="font-bold text-card-foreground text-lg truncate">CRM</span>
+              </>
+            )}
           </div>
           <button 
             className="md:hidden text-muted-foreground hover:text-foreground"
