@@ -79,8 +79,8 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
                   <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
                     {idx + 1}
                   </div>
-                  <span className="flex-1 text-sm font-medium text-card-foreground">{formatDate(l.data)}</span>
-                  <span className="font-semibold text-success text-sm">{formatCurrency(l.valorLiquido)}</span>
+                  <span className="flex-1 text-sm font-medium text-card-foreground truncate">{formatDate(l.data)}</span>
+                  <span className="font-semibold text-success text-sm whitespace-nowrap">{formatCurrency(l.valorLiquido)}</span>
                 </div>
               ))}
             </div>
