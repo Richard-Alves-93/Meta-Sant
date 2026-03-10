@@ -13,6 +13,7 @@ import {
   exportarDadosJSON, exportarCSV,
   Meta, Lancamento, CrmDatabase
 } from "@/lib/crm-data";
+import { hexToHslStr } from "@/lib/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { LogOut } from "lucide-react";
@@ -44,6 +45,16 @@ const Index = () => {
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
+
+  useEffect(() => {
+    const customPrimaryColor = localStorage.getItem('crm_custom_primary_color');
+    if (customPrimaryColor) {
+      document.documentElement.style.setProperty('--primary', hexToHslStr(customPrimaryColor));
+      document.documentElement.style.setProperty('--ring', hexToHslStr(customPrimaryColor));
+      document.documentElement.style.setProperty('--sidebar-primary', hexToHslStr(customPrimaryColor));
+      document.documentElement.style.setProperty('--sidebar-ring', hexToHslStr(customPrimaryColor));
+    }
+  }, []);
 
   const handleSaveMeta = async (nome: string, valor: number, descricao: string) => {
     if (editingMeta) await updateMeta(editingMeta.id, nome, valor, descricao);
@@ -145,9 +156,14 @@ const Index = () => {
         </div>
 
         <footer className="bg-card border-t border-border py-4 px-8 text-center text-xs text-muted-foreground">
-          © 2026 CRM Dashboard desenvolvido por <a href="https://wa.me/5551991840532" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline transition-colors font-medium">Richard Alves</a>. Todos os direitos reservados.
+          © {new Date().getFullYear()} CRM Dashboard desenvolvido por <a href="https://wa.me/5551991840532" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline transition-colors font-medium">Richard Alves</a>. Todos os direitos reservados.
         </footer>
       </main>
+
+      <a id="custom-badge-cta" target="_blank" href="https://wa.me/5551991840532" rel="noopener noreferrer" 
+         className="fixed bottom-4 right-4 bg-[#25D366] text-white px-4 py-2 rounded-full no-underline font-sans text-sm font-semibold shadow-lg z-[9999] flex items-center gap-2 hover:bg-[#20bd5a] transition-colors">
+        Desenvolvido por Richard Alves
+      </a>
 
       <MetaModal open={metaModalOpen} onClose={() => { setMetaModalOpen(false); setEditingMeta(null); }}
         onSave={handleSaveMeta} editingMeta={editingMeta} />

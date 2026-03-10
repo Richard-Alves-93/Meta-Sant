@@ -113,3 +113,7 @@
     border-radius: 3px;
   }
 }
+
+#lovable-badge-cta {
+  display: none !important;
+}

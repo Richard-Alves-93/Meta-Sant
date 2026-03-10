@@ -4,8 +4,8 @@ import { Pencil, Trash2 } from "lucide-react";
 interface MetaCardProps {
   meta: Meta;
   lancamentos: Lancamento[];
-  onEdit: (meta: Meta) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (meta: Meta) => void;
+  onDelete?: (id: string) => void;
 }
 
 const MetaCard = ({ meta, lancamentos, onEdit, onDelete }: MetaCardProps) => {
@@ -45,14 +45,20 @@ const MetaCard = ({ meta, lancamentos, onEdit, onDelete }: MetaCardProps) => {
       </div>
       <span className="text-xs text-muted-foreground">{Math.round(calc.percentual)}% da meta</span>
 
-      <div className="flex gap-2 mt-4">
-        <button onClick={() => onEdit(meta)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium bg-secondary text-muted-foreground hover:bg-border transition-colors">
-          <Pencil size={14} /> Editar
-        </button>
-        <button onClick={() => onDelete(meta.id)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors">
-          <Trash2 size={14} /> Remover
-        </button>
-      </div>
+      {(onEdit || onDelete) && (
+        <div className="flex gap-2 mt-4">
+          {onEdit && (
+            <button onClick={() => onEdit(meta)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium bg-secondary text-muted-foreground hover:bg-border transition-colors">
+              <Pencil size={14} /> Editar
+            </button>
+          )}
+          {onDelete && (
+            <button onClick={() => onDelete(meta.id)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors">
+              <Trash2 size={14} /> Remover
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

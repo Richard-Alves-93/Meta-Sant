@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { CrmDatabase, exportarDadosJSON, exportarCSV } from "@/lib/crm-data";
+import { hexToHslStr } from "@/lib/colors";
 
 interface ConfiguracoesPageProps {
   db: CrmDatabase;
@@ -8,6 +10,10 @@ interface ConfiguracoesPageProps {
 }
 
 const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: ConfiguracoesPageProps) => {
+  const [primaryColor, setPrimaryColor] = useState(
+    localStorage.getItem('crm_custom_primary_color') || "#3b82f6"
+  );
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -24,6 +30,16 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
   const handleRemoveLogo = () => {
     localStorage.removeItem('crm_custom_logo');
     onLogoChange(null);
+  };
+
+  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setPrimaryColor(val);
+    localStorage.setItem('crm_custom_primary_color', val);
+    document.documentElement.style.setProperty('--primary', hexToHslStr(val));
+    document.documentElement.style.setProperty('--ring', hexToHslStr(val));
+    document.documentElement.style.setProperty('--sidebar-primary', hexToHslStr(val));
+    document.documentElement.style.setProperty('--sidebar-ring', hexToHslStr(val));
   };
 
   return (
@@ -68,6 +84,19 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
                   />
                   <p className="mt-2 text-xs text-muted-foreground">Recomendado: Imagens com fundo transparente (PNG).</p>
                 </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-border mt-4">
+              <label className="block text-sm font-medium text-muted-foreground mb-2">Cor Principal (Botões e Links)</label>
+              <div className="flex items-center gap-4">
+                <input
+                  type="color"
+                  value={primaryColor}
+                  onChange={handleColorChange}
+                  className="w-12 h-12 p-1 rounded cursor-pointer border border-border"
+                />
+                <span className="text-sm text-muted-foreground">Escolha a cor de destaque do sistema</span>
               </div>
             </div>
           </div>

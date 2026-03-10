@@ -79,7 +79,7 @@ const DashboardPage = ({ db, onOpenLancamento, onExport, onImport, onEditMeta, o
           <h2 className="text-lg font-semibold text-foreground mb-4">VENDAS NECESSÁRIAS HOJE</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {db.metas.map(meta => (
-              <MetaCard key={meta.id} meta={meta} lancamentos={lancamentosMes} onEdit={onEditMeta} onDelete={onDeleteMeta} />
+              <MetaCard key={meta.id} meta={meta} lancamentos={lancamentosMes} />
             ))}
           </div>
         </div>

@@ -19,7 +19,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="flex-1 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="bg-card border border-border rounded-2xl p-8 shadow-lg text-center">
           <div className="w-14 h-14 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4">
@@ -49,6 +50,10 @@ const Login = () => {
           </p>
         </div>
       </div>
+      </div>
+      <footer className="py-4 px-8 text-center text-xs text-muted-foreground">
+        © {new Date().getFullYear()} CRM Dashboard desenvolvido por <a href="https://wa.me/5551991840532" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline transition-colors font-medium">Richard Alves</a>. Todos os direitos reservados.
+      </footer>
     </div>
   );
 };
