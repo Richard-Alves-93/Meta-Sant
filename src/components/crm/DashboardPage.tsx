@@ -3,7 +3,7 @@ import { CrmDatabase, getLancamentosDoMes, formatCurrency, getDiasMes, calcularV
 import KpiCard from "./KpiCard";
 import MetaCard from "./MetaCard";
 import { Meta } from "@/lib/crm-data";
-import { DollarSign, TrendingDown, Activity, TrendingUp } from "lucide-react";
+import { DollarSign, TrendingDown, Activity, TrendingUp, MessageCircle } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from "recharts";
 
 interface DashboardPageProps {
@@ -53,6 +53,25 @@ const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta }: Dashb
     [db]
   );
 
+  const handleShareAllMetas = () => {
+    if (db.metas.length === 0) return;
+    
+    let text = `🎯 *Resumo Diário das Metas*\n\n`;
+    
+    db.metas.forEach(meta => {
+      const calc = calcularVendasNecessarias(meta, lancamentosMes);
+      text += `📌 *${meta.nome}*\n`;
+      text += `💰 Objetivo: ${formatCurrency(meta.valor)}\n`;
+      text += `✅ Vendido: ${formatCurrency(calc.totalVendido)} (${Math.round(calc.percentual)}%)\n`;
+      text += `⏳ Faltam: ${formatCurrency(calc.vendasRestantes)}\n`;
+      text += `📅 Necessário/dia: ${formatCurrency(calc.vendasNecessarias)}\n`;
+      text += `${calc.metaBatida ? "🎉 Meta batida! 🚀" : "💪 Foco na meta!"}\n\n`;
+    });
+
+    const url = `https://wa.me/?text=${encodeURIComponent(text.trim())}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div>
       <div className="mb-8">
@@ -62,6 +81,15 @@ const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta }: Dashb
           <button onClick={onOpenLancamento} className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
             + Lançar venda do dia
           </button>
+          {db.metas.length > 0 && (
+            <button 
+              onClick={handleShareAllMetas}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#25D366] text-white text-sm font-medium hover:bg-[#20bd5a] transition-colors"
+            >
+              <MessageCircle size={18} />
+              Compartilhar Metas
+            </button>
+          )}
         </div>
       </div>
 

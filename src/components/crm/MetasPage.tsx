@@ -1,8 +1,8 @@
-import { CrmDatabase, getLancamentosDoMes, formatCurrency, getDiasMes, Meta, Lancamento } from "@/lib/crm-data";
+import { CrmDatabase, getLancamentosDoMes, formatCurrency, getDiasMes, calcularVendasNecessarias, Meta, Lancamento } from "@/lib/crm-data";
 import KpiCard from "./KpiCard";
 import MetaCard from "./MetaCard";
 import { useMemo } from "react";
-import { DollarSign, Activity, TrendingUp } from "lucide-react";
+import { DollarSign, Activity, TrendingUp, MessageCircle } from "lucide-react";
 
 interface MetasPageProps {
   db: CrmDatabase;
@@ -17,15 +17,43 @@ const MetasPage = ({ db, onAdd, onEdit, onDelete }: MetasPageProps) => {
   const mediaDiaria = lancamentosMes.length > 0 ? totalLiquido / lancamentosMes.length : 0;
   const projecao = mediaDiaria * getDiasMes();
 
+  const handleShareAllMetas = () => {
+    if (db.metas.length === 0) return;
+    
+    let text = `🎯 *Resumo Diário das Metas*\n\n`;
+    
+    db.metas.forEach(meta => {
+      const calc = calcularVendasNecessarias(meta, lancamentosMes);
+      text += `📌 *${meta.nome}*\n`;
+      text += `💰 Objetivo: ${formatCurrency(meta.valor)}\n`;
+      text += `✅ Vendido: ${formatCurrency(calc.totalVendido)} (${Math.round(calc.percentual)}%)\n`;
+      text += `⏳ Faltam: ${formatCurrency(calc.vendasRestantes)}\n`;
+      text += `📅 Necessário/dia: ${formatCurrency(calc.vendasNecessarias)}\n`;
+      text += `${calc.metaBatida ? "🎉 Meta batida! 🚀" : "💪 Foco na meta!"}\n\n`;
+    });
+
+    const url = `https://wa.me/?text=${encodeURIComponent(text.trim())}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-1">Metas</h1>
         <p className="text-muted-foreground text-sm">Crie, edite e remova metas para acompanhar quanto precisa vender por dia.</p>
-        <div className="mt-4">
+        <div className="flex gap-3 mt-4 flex-wrap">
           <button onClick={onAdd} className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
             + Nova Meta
           </button>
+          {db.metas.length > 0 && (
+            <button 
+              onClick={handleShareAllMetas}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#25D366] text-white text-sm font-medium hover:bg-[#20bd5a] transition-colors"
+            >
+              <MessageCircle size={18} />
+              Compartilhar Metas
+            </button>
+          )}
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import { Meta, Lancamento, calcularVendasNecessarias, formatCurrency } from "@/lib/crm-data";
-import { Pencil, Trash2, MessageCircle } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 interface MetaCardProps {
   meta: Meta;
@@ -11,31 +11,11 @@ interface MetaCardProps {
 const MetaCard = ({ meta, lancamentos, onEdit, onDelete }: MetaCardProps) => {
   const calc = calcularVendasNecessarias(meta, lancamentos);
 
-  const handleShareWhatsApp = () => {
-    const text = `🎯 *Resumo da Meta:* ${meta.nome}
-💰 *Objetivo:* ${formatCurrency(meta.valor)}
-✅ *Vendido:* ${formatCurrency(calc.totalVendido)} (${Math.round(calc.percentual)}%)
-⏳ *Faltam:* ${formatCurrency(calc.vendasRestantes)}
-📅 *Necessário/dia:* ${formatCurrency(calc.vendasNecessarias)}
-
-${calc.metaBatida ? "🎉 Parabéns! Meta batida! 🚀" : "Vamos lá, foco na meta! 💪"}`;
-
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
-  };
-
   return (
     <div className={`bg-card border rounded-xl p-6 shadow-sm transition-all relative group ${calc.metaBatida ? "border-success/40 bg-success/5" : "border-border"}`}>
       <div className="flex items-start justify-between mb-3">
         <h3 className="font-semibold text-card-foreground pr-8">{meta.nome}</h3>
         <div className="flex items-center gap-2">
-          <button 
-            onClick={handleShareWhatsApp}
-            title="Compartilhar Progresso no WhatsApp"
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white transition-colors"
-          >
-            <MessageCircle size={16} />
-          </button>
           <span className={`text-xs font-medium px-3 py-1 rounded-full ${calc.metaBatida ? "bg-success/15 text-success" : "bg-accent text-accent-foreground"}`}>
             {calc.metaBatida ? "Meta batida ✓" : "Ativa"}
           </span>
