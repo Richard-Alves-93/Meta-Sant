@@ -136,7 +136,6 @@ const Index = () => {
         <div className="flex-1 p-8">
           {page === "dashboard" && (
             <DashboardPage db={db} onOpenLancamento={() => { setEditingLanc(null); setLancModalOpen(true); }}
-              onExport={handleExport} onImport={() => {}}
               onEditMeta={handleEditMeta} onDeleteMeta={handleDeleteMeta} />
           )}
           {page === "lancamentos" && (

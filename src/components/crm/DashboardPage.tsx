@@ -9,13 +9,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 interface DashboardPageProps {
   db: CrmDatabase;
   onOpenLancamento: () => void;
-  onExport: () => void;
-  onImport: () => void;
   onEditMeta: (meta: Meta) => void;
   onDeleteMeta: (id: string) => void;
 }
 
-const DashboardPage = ({ db, onOpenLancamento, onExport, onImport, onEditMeta, onDeleteMeta }: DashboardPageProps) => {
+const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta }: DashboardPageProps) => {
   const lancamentosMes = useMemo(() => getLancamentosDoMes(db), [db]);
 
   const totalLiquido = lancamentosMes.reduce((s, l) => s + l.valorLiquido, 0);
@@ -64,13 +62,6 @@ const DashboardPage = ({ db, onOpenLancamento, onExport, onImport, onEditMeta, o
           <button onClick={onOpenLancamento} className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
             + Lançar venda do dia
           </button>
-          <button onClick={onExport} className="px-4 py-2.5 rounded-lg bg-card border border-border text-muted-foreground text-sm font-medium hover:bg-secondary transition-colors">
-            📥 Exportar Dados
-          </button>
-          <button onClick={() => document.getElementById("import-input")?.click()} className="px-4 py-2.5 rounded-lg bg-card border border-border text-muted-foreground text-sm font-medium hover:bg-secondary transition-colors">
-            📤 Importar Dados
-          </button>
-          <input id="import-input" type="file" accept=".json" className="hidden" onChange={(e) => { if (e.target.files?.[0]) onImport(); }} />
         </div>
       </div>
 

@@ -103,8 +103,8 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
         </div>
 
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-          <h3 className="font-semibold text-card-foreground mb-2">📥 Exportar Dados</h3>
-          <p className="text-sm text-muted-foreground mb-4">Exporte seus dados em JSON ou CSV.</p>
+          <h3 className="font-semibold text-card-foreground mb-2">📥 Exportar & 📤 Importar Dados</h3>
+          <p className="text-sm text-muted-foreground mb-4">Exporte seus dados em JSON ou CSV, ou importe planilhas de backup json.</p>
           <div className="flex gap-3 flex-wrap">
             <button onClick={exportarDadosJSON} className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
               📥 Exportar JSON
@@ -112,6 +112,10 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
             <button onClick={exportarCSV} className="px-4 py-2.5 rounded-lg bg-card border border-border text-muted-foreground text-sm font-medium hover:bg-secondary transition-colors">
               📥 Exportar CSV
             </button>
+            <button onClick={() => document.getElementById("import-input")?.click()} className="px-4 py-2.5 rounded-lg bg-card border border-border text-muted-foreground text-sm font-medium hover:bg-secondary transition-colors">
+              📤 Importar Dados
+            </button>
+            <input id="import-input" type="file" accept=".json" className="hidden" onChange={(e) => { if (e.target.files?.[0]) console.log('Import not implemented'); }} />
           </div>
         </div>
 
