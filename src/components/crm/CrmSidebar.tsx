@@ -1,4 +1,4 @@
-import { BarChart3, FileText, Target, TrendingUp, Settings } from "lucide-react";
+import { BarChart3, FileText, Target, TrendingUp, Settings, X } from "lucide-react";
 
 export type CrmPage = "dashboard" | "lancamentos" | "metas" | "relatorios" | "configuracoes";
 
@@ -6,6 +6,8 @@ interface CrmSidebarProps {
   currentPage: CrmPage;
   onNavigate: (page: CrmPage) => void;
   logoUrl?: string | null;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 const navItems: { page: CrmPage; label: string; icon: React.ReactNode }[] = [
@@ -16,11 +18,25 @@ const navItems: { page: CrmPage; label: string; icon: React.ReactNode }[] = [
   { page: "configuracoes", label: "Configurações", icon: <Settings size={20} /> },
 ];
 
-const CrmSidebar = ({ currentPage, onNavigate, logoUrl }: CrmSidebarProps) => {
+const CrmSidebar = ({ currentPage, onNavigate, logoUrl, isOpen, onClose }: CrmSidebarProps) => {
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[250px] bg-card border-r border-border flex flex-col z-50">
-      <div className="flex items-center gap-3 px-6 py-6 h-[88px]">
-        {logoUrl ? (
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed left-0 top-0 h-screen w-[250px] bg-card border-r border-border flex flex-col z-50 transition-transform duration-300
+        ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        <div className="flex items-center justify-between px-6 py-6 h-[88px]">
+          <div className="flex items-center gap-3">
+            {logoUrl ? (
           <img 
             src={logoUrl} 
             alt="Logo CRM" 
@@ -31,10 +47,17 @@ const CrmSidebar = ({ currentPage, onNavigate, logoUrl }: CrmSidebarProps) => {
             <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
               <span className="text-primary-foreground text-xs font-bold">CR</span>
             </div>
-            <span className="font-bold text-card-foreground text-lg truncate">CRM</span>
-          </>
-        )}
-      </div>
+              <span className="font-bold text-card-foreground text-lg truncate">CRM</span>
+            </>
+          )}
+          </div>
+          <button 
+            className="md:hidden text-muted-foreground hover:text-foreground"
+            onClick={onClose}
+          >
+            <X size={20} />
+          </button>
+        </div>
 
       <nav className="flex flex-col gap-1 px-3 flex-1">
         {navItems.map((item) => (
@@ -53,6 +76,7 @@ const CrmSidebar = ({ currentPage, onNavigate, logoUrl }: CrmSidebarProps) => {
         ))}
       </nav>
     </aside>
+    </>
   );
 };
 

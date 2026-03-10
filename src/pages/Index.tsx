@@ -16,12 +16,13 @@ import {
 import { hexToHslStr } from "@/lib/colors";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { LogOut } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const Index = () => {
   const { user, signOut } = useAuth();
   const [page, setPage] = useState<CrmPage>("dashboard");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [db, setDb] = useState<CrmDatabase>({ metas: [], lancamentos: [] });
   const [loading, setLoading] = useState(true);
   const [customLogo, setCustomLogo] = useState<string | null>(() => {
@@ -110,12 +111,25 @@ const Index = () => {
   }
 
   return (
-    <div className="flex min-h-screen">
-      <CrmSidebar currentPage={page} onNavigate={setPage} logoUrl={customLogo} />
+    <div className="flex min-h-screen bg-background">
+      <CrmSidebar 
+        currentPage={page} 
+        onNavigate={(p) => { setPage(p); setIsSidebarOpen(false); }} 
+        logoUrl={customLogo} 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
-      <main className="ml-[250px] flex-1 flex flex-col">
-        <header className="bg-card border-b border-border px-8 h-16 flex items-center justify-between sticky top-0 z-40">
-          <div />
+      <main className="flex-1 flex flex-col min-w-0 transition-all duration-300 md:ml-[250px]">
+        <header className="bg-card border-b border-border px-4 md:px-8 h-16 flex items-center justify-between sticky top-0 z-30">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="md:hidden w-10 h-10 flex items-center justify-center rounded-lg hover:bg-secondary text-foreground"
+            >
+              <Menu size={20} />
+            </button>
+          </div>
           <div className="flex items-center gap-3">
             <Avatar className="w-8 h-8">
               <AvatarImage src={avatarUrl} alt={displayName} />
@@ -132,7 +146,7 @@ const Index = () => {
           </div>
         </header>
 
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-4 md:p-8 overflow-x-hidden">
           {page === "dashboard" && (
             <DashboardPage db={db} onOpenLancamento={() => { setEditingLanc(null); setLancModalOpen(true); }}
               onEditMeta={handleEditMeta} onDeleteMeta={handleDeleteMeta} />
