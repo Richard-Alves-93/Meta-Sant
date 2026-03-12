@@ -222,10 +222,12 @@ export async function fetchCustomers(): Promise<Customer[]> {
   return data as Customer[];
 }
 
-export async function addCustomer(customer: Omit<Customer, 'id'>) {
+export async function addCustomer(customer: Omit<Customer, 'id'>): Promise<Customer> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
-  await supabase.from('customers').insert({ ...customer, user_id: user.id });
+  const { data, error } = await supabase.from('customers').insert({ ...customer, user_id: user.id } as any).select().single();
+  if (error) throw error;
+  return data as Customer;
 }
 
 export async function updateCustomer(id: string, customer: Partial<Omit<Customer, 'id'>>) {
@@ -249,10 +251,12 @@ export async function fetchPetsByCustomer(customerId: string): Promise<Pet[]> {
   return data as Pet[];
 }
 
-export async function addPet(pet: Omit<Pet, 'id'>) {
+export async function addPet(pet: Omit<Pet, 'id'>): Promise<Pet> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
-  await supabase.from('pets').insert({ ...pet, user_id: user.id });
+  const { data, error } = await supabase.from('pets').insert({ ...pet, user_id: user.id } as any).select().single();
+  if (error) throw error;
+  return data as Pet;
 }
 
 export async function updatePet(id: string, pet: Partial<Omit<Pet, 'id'>>) {

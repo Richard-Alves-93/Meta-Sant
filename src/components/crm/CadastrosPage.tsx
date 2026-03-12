@@ -153,7 +153,7 @@ const CadastrosPage = () => {
 
   const handleSaveCadastroCompleto = async (
     tutor: Omit<Customer, 'id'>, 
-    petsList: Omit<Pet, 'id'>[], 
+    petsList: Omit<Pet, 'id' | 'customer_id'>[],
     purchasesList: {petIndex: number, product_id: string, data_compra: string}[]
   ) => {
     try {

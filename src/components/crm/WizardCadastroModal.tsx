@@ -15,7 +15,7 @@ interface WizardCadastroModalProps {
   products: Product[];
   onSaveCompleto: (
     tutor: Omit<Customer, 'id'>, 
-    pets: Omit<Pet, 'id'>[], 
+    pets: Omit<Pet, 'id' | 'customer_id'>[], 
     purchases: {petIndex: number, product_id: string, data_compra: string}[]
   ) => Promise<void>;
 }
@@ -78,7 +78,7 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
     
     setLoading(true);
     try {
-      await onSaveCompleto(tutor, pets, validPurchases);
+      await onSaveCompleto(tutor, pets.map(p => ({ ...p, peso: p.peso ? Number(p.peso) : null })) as Omit<Pet, 'id' | 'customer_id'>[], validPurchases);
       toast.success("Cadastro completo realizado com sucesso!");
       handleClose();
     } catch (err) {
