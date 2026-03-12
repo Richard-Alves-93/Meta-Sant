@@ -73,7 +73,7 @@ const CadastrosPage = () => {
         toast.success("Cliente criado!");
       }
       setClienteModalOpen(false);
-      loadData();
+      await loadData();
     } catch (error) {
       console.error(error);
       toast.error("Erro ao salvar cliente.");
@@ -85,7 +85,7 @@ const CadastrosPage = () => {
     try {
       await deleteCustomer(id);
       toast.success("Cliente removido!");
-      loadData();
+      await loadData();
     } catch (error) {
       console.error(error);
       toast.error("Erro ao remover cliente.");
@@ -103,7 +103,7 @@ const CadastrosPage = () => {
         toast.success("Pet adicionado!");
       }
       setPetModalOpen(false);
-      loadData();
+      await loadData();
     } catch (error) {
       console.error(error);
       toast.error("Erro ao salvar pet.");
@@ -115,7 +115,7 @@ const CadastrosPage = () => {
     try {
       await deletePet(id);
       toast.success("Pet removido!");
-      loadData();
+      await loadData();
     } catch (error) {
       console.error(error);
       toast.error("Erro ao remover pet.");
@@ -133,7 +133,7 @@ const CadastrosPage = () => {
         toast.success("Produto criado!");
       }
       setProdutoModalOpen(false);
-      loadData();
+      await loadData();
     } catch (error) {
       console.error(error);
       toast.error("Erro ao salvar produto.");
@@ -145,7 +145,7 @@ const CadastrosPage = () => {
     try {
       await deleteProduct(id);
       toast.success("Produto removido!");
-      loadData();
+      await loadData();
     } catch (error) {
       console.error(error);
       toast.error("Erro ao remover produto.");
@@ -158,46 +158,117 @@ const CadastrosPage = () => {
     purchasesList: {petIndex: number, product_id: string, product_name: string, prazo_recompra: number, data_compra: string}[]
   ) => {
     try {
+      console.log("=== Iniciando cadastro completo ===");
+      console.log("Tutor:", tutor);
+      console.log("Pets:", petsList);
+      console.log("Compras:", purchasesList);
+
       // 1. Salvar Tutor
+      console.log("Step 1: Salvando tutor...");
       const newCustomer = await addCustomer(tutor);
-      if (!newCustomer || !newCustomer.id) throw new Error("Tutor não foi criado corretamente");
+      if (!newCustomer || !newCustomer.id) {
+        throw new Error("Tutor não foi criado corretamente - sem ID retornado");
+      }
+      console.log("✓ Tutor criado com ID:", newCustomer.id);
 
       // 2. Salvar Pets
+      console.log("Step 2: Salvando pets...");
       const createdPets: Pet[] = [];
-      for (const p of petsList) {
-        if (!p.nome.trim()) continue;
+      for (let i = 0; i < petsList.length; i++) {
+        const p = petsList[i];
+        if (!p.nome.trim()) {
+          console.warn(`Pet ${i} sem nome, pulando...`);
+          continue;
+        }
+        console.log(`Salvando pet ${i + 1}/${petsList.length}:`, p.nome);
         const savedPet = await addPet({ ...p, customer_id: newCustomer.id });
-        if (savedPet) createdPets.push(savedPet);
+        if (savedPet && savedPet.id) {
+          createdPets.push(savedPet);
+          console.log(`✓ Pet "${p.nome}" criado com ID:`, savedPet.id);
+        } else {
+          console.error(`Erro ao salvar pet ${p.nome} - sem ID retornado`);
+          throw new Error(`Pet "${p.nome}" não foi criado corretamente`);
+        }
+      }
+      console.log(`✓ ${createdPets.length} pets criados`);
+
+      if (createdPets.length === 0 && petsList.length > 0) {
+        throw new Error("Nenhum pet foi criado com sucesso");
       }
 
-      // 3. Salvar Compras (Registrar primeira recompra se houver produto vinculado)
-      for (const purchase of purchasesList) {
-        if (!purchase.product_id && !purchase.product_name.trim()) continue;
+      // 3. Salvar Compras
+      console.log("Step 3: Salvando compras recorrentes...");
+      let comprasCount = 0;
+      for (let i = 0; i < purchasesList.length; i++) {
+        const purchase = purchasesList[i];
+
+        // Skip empty purchases
+        if (!purchase.product_id && !purchase.product_name.trim()) {
+          console.log(`Compra ${i} vazia, pulando...`);
+          continue;
+        }
+
+        console.log(`Processando compra ${i + 1}/${purchasesList.length}...`);
+
+        // Validar índice do pet
+        if (purchase.petIndex < 0 || purchase.petIndex >= createdPets.length) {
+          throw new Error(`Índice de pet inválido (${purchase.petIndex}) na compra ${i + 1}. Apenas ${createdPets.length} pets criados.`);
+        }
 
         const targetPet = createdPets[purchase.petIndex];
-        if (!targetPet) throw new Error(`Pet inválido para compra recorrente`);
+        if (!targetPet || !targetPet.id) {
+          throw new Error(`Pet inválido para compra recorrente ${i + 1} (índice ${purchase.petIndex})`);
+        }
+        console.log(`Compra vinculada ao pet: ${targetPet.nome} (ID: ${targetPet.id})`);
 
         // Validar prazo de recompra
         if (!purchase.prazo_recompra || purchase.prazo_recompra < 1) {
-          throw new Error("Prazo de recompra deve ser um número válido na compra recorrente");
+          throw new Error(`Compra ${i + 1}: Prazo de recompra inválido (${purchase.prazo_recompra}). Deve ser mínimo 1 dia.`);
         }
+        console.log(`Prazo de recompra: ${purchase.prazo_recompra} dias`);
+
+        // Validar data de compra
+        if (!purchase.data_compra) {
+          throw new Error(`Compra ${i + 1}: Data da compra não informada`);
+        }
+        console.log(`Data da compra: ${purchase.data_compra}`);
 
         // Resolve product_id: use existing or create new
         let productId = purchase.product_id;
-        if (!productId && purchase.product_name.trim()) {
-          const product = await findOrCreateProduct(purchase.product_name.trim());
-          if (!product || !product.id) throw new Error("Falha ao criar produto automaticamente");
+        let productName = purchase.product_name;
+
+        if (!productId) {
+          if (!productName.trim()) {
+            throw new Error(`Compra ${i + 1}: Produto não informado`);
+          }
+          console.log(`Procurando/criando produto: ${productName}...`);
+          const product = await findOrCreateProduct(productName.trim());
+          if (!product || !product.id) {
+            throw new Error(`Falha ao criar/encontrar produto "${productName}"`);
+          }
           productId = product.id;
+          console.log(`✓ Produto encontrado/criado com ID: ${productId}`);
         }
 
         // Salvar ciclo de compra com prazo_recompra explícito
+        console.log(`Criando ciclo de compra para pet ${targetPet.nome}...`);
         await startNewPurchaseCycle(targetPet.id, productId, purchase.data_compra, purchase.prazo_recompra);
+        comprasCount++;
+        console.log(`✓ Compra ${i + 1} criada com sucesso`);
       }
 
-      loadData();
+      console.log(`✓ ${comprasCount} compras criadas`);
+      console.log("=== Cadastro completo salvo com sucesso ===");
+
+      // Recarregar dados
+      console.log("Recarregando dados...");
+      await loadData();
+      console.log("✓ Dados recarregados");
+
     } catch (err: any) {
-      console.error("Erro ao salvar cadastro completo:", err);
-      throw new Error(err.message || "Erro desconhecido ao salvar cadastro");
+      console.error("❌ Erro ao salvar cadastro completo:", err);
+      console.error("Stack:", err.stack);
+      throw new Error(err.message || "Erro desconhecido ao salvar cadastro completo");
     }
   };
 

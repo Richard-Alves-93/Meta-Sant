@@ -15,9 +15,9 @@ interface WizardCadastroModalProps {
   onClose: () => void;
   products: Product[];
   onSaveCompleto: (
-    tutor: Omit<Customer, 'id'>, 
-    pets: Omit<Pet, 'id' | 'customer_id'>[], 
-    purchases: {petIndex: number, product_id: string, product_name: string, data_compra: string}[]
+    tutor: Omit<Customer, 'id'>,
+    pets: Omit<Pet, 'id' | 'customer_id'>[],
+    purchases: {petIndex: number, product_id: string, product_name: string, prazo_recompra: number, data_compra: string}[]
   ) => Promise<void>;
 }
 
@@ -92,40 +92,53 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
     const validPurchases = purchases.filter(p => p.product_id || p.product_name.trim());
 
     // Validar cada compra válida
-    for (const purchase of validPurchases) {
+    for (let i = 0; i < validPurchases.length; i++) {
+      const purchase = validPurchases[i];
       if (!purchase.prazo_recompra || purchase.prazo_recompra < 1) {
-        toast.error("Prazo de recompra deve ser um número válido (mínimo 1 dia)");
+        toast.error(`Compra ${i + 1}: Prazo de recompra deve ser um número válido (mínimo 1 dia)`);
         return;
       }
       if (!purchase.data_compra) {
-        toast.error("Data da compra é obrigatória");
+        toast.error(`Compra ${i + 1}: Data da compra é obrigatória`);
+        return;
+      }
+      if (!purchase.product_id && !purchase.product_name.trim()) {
+        toast.error(`Compra ${i + 1}: Produto é obrigatório`);
         return;
       }
     }
 
     setLoading(true);
     try {
+      console.log("Enviando dados do cadastro completo para salvamento...");
       await onSaveCompleto(
         tutor,
         pets.map(p => ({ ...p, peso: p.peso ? Number(p.peso) : null })) as Omit<Pet, 'id' | 'customer_id'>[],
         validPurchases
       );
+      console.log("✓ Cadastro completo salvo com sucesso!");
       toast.success("Cadastro completo realizado com sucesso!");
       handleClose();
     } catch (err: any) {
-      console.error("Erro ao salvar cadastro completo:", err);
+      console.error("❌ Erro ao salvar cadastro completo:", err);
+      console.error("Mensagem:", err.message);
+      console.error("Stack:", err.stack);
 
       // Mensagens de erro específicas
       if (err.message?.includes("tutor")) {
-        toast.error("Erro ao salvar dados do tutor");
+        toast.error("Erro ao salvar dados do tutor. Verifique sua conexão e tente novamente.");
       } else if (err.message?.includes("pet")) {
-        toast.error("Erro ao salvar dados do pet");
+        toast.error("Erro ao salvar dados do pet. Verifique a conexão e tente novamente.");
       } else if (err.message?.includes("produto")) {
-        toast.error("Erro ao criar/encontrar produto");
-      } else if (err.message?.includes("compra")) {
-        toast.error("Erro ao salvar compra recorrente");
+        toast.error("Erro ao criar/encontrar produto. Tente novamente.");
+      } else if (err.message?.includes("compra") || err.message?.includes("ciclo")) {
+        toast.error("Erro ao salvar compra recorrente. Tente novamente.");
+      } else if (err.message?.includes("inválido")) {
+        toast.error(`Dados inválidos: ${err.message}`);
+      } else if (err.message?.includes("Índice")) {
+        toast.error(`Erro de validação: ${err.message}`);
       } else {
-        toast.error("Ocorreu um erro ao salvar o cadastro completo. Verifique o console para mais detalhes.");
+        toast.error(`Erro ao salvar o cadastro: ${err.message || "Erro desconhecido"}`);
       }
     } finally {
       setLoading(false);
