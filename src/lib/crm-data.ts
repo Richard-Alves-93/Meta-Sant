@@ -274,10 +274,38 @@ export async function fetchProducts(): Promise<Product[]> {
   return data as Product[];
 }
 
-export async function addProduct(product: Omit<Product, 'id'>) {
+export async function addProduct(product: Omit<Product, 'id'>): Promise<Product> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
-  await supabase.from('products').insert({ ...product, user_id: user.id });
+  const { data, error } = await supabase.from('products').insert({ ...product, user_id: user.id } as any).select().single();
+  if (error) throw error;
+  return data as Product;
+}
+
+export async function findOrCreateProduct(productName: string): Promise<Product> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  
+  // Try to find existing product by name
+  const { data: existing } = await supabase
+    .from('products')
+    .select('*')
+    .eq('user_id', user.id)
+    .ilike('nome', productName)
+    .limit(1);
+  
+  if (existing && existing.length > 0) {
+    return existing[0] as Product;
+  }
+  
+  // Create new product with defaults
+  return addProduct({
+    nome: productName,
+    categoria: null,
+    prazo_recompra_dias: 30,
+    dias_aviso_previo: 3,
+    mensagem_padrao: null,
+  });
 }
 
 export async function updateProduct(id: string, product: Partial<Omit<Product, 'id'>>) {
