@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, AlertCircle } from "lucide-react";
 import { Product } from "@/lib/crm-data";
 
 interface ProdutoModalProps {
@@ -60,7 +60,7 @@ const ProdutoModal = ({ open, onClose, onSave, editingProduct }: ProdutoModalPro
           <h2 className="text-lg font-semibold text-foreground">
             {editingProduct ? "Editar Produto" : "Novo Produto"}
           </h2>
-          <button 
+          <button
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-secondary"
           >
@@ -68,22 +68,41 @@ const ProdutoModal = ({ open, onClose, onSave, editingProduct }: ProdutoModalPro
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4 max-h-[80vh] overflow-y-auto">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Nome do Produto *</label>
-            <input 
+            <input
               required
-              type="text" 
+              type="text"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               placeholder="Ex: Ração Golden 15kg"
-              className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" 
+              className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
+          </div>
+
+          {/* Highlighted Prazo Recompra Section */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertCircle size={18} className="text-amber-600" />
+              <label className="text-sm font-semibold text-amber-900">Prazo de Recompra (dias) *</label>
+            </div>
+            <input
+              required
+              type="number"
+              min="1"
+              value={prazoRecompra}
+              onChange={(e) => setPrazoRecompra(e.target.value)}
+              className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring font-semibold"
+            />
+            <p className="text-xs text-amber-700 font-medium">
+              Padrão para novas recompras: este valor será usado quando o produto for selecionado em "Iniciar Novo Ciclo"
+            </p>
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Categoria</label>
-            <select 
+            <select
               value={categoria}
               onChange={(e) => setCategoria(e.target.value)}
               className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -96,52 +115,39 @@ const ProdutoModal = ({ open, onClose, onSave, editingProduct }: ProdutoModalPro
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Prazo Recompra (Dias) *</label>
-              <input 
-                required
-                type="number" 
-                min="1"
-                value={prazoRecompra}
-                onChange={(e) => setPrazoRecompra(e.target.value)}
-                className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" 
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Aviso Prévio (Dias) *</label>
-              <input 
-                required
-                type="number" 
-                min="0"
-                value={diasAviso}
-                onChange={(e) => setDiasAviso(e.target.value)}
-                className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" 
-              />
-            </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Aviso Prévio (dias) *</label>
+            <input
+              required
+              type="number"
+              min="0"
+              value={diasAviso}
+              onChange={(e) => setDiasAviso(e.target.value)}
+              className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+            <p className="text-xs text-muted-foreground">Quantos dias antes enviar lembretes</p>
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Mensagem Padrão (WhatsApp)</label>
             <p className="text-xs text-muted-foreground">Variáveis: {'{cliente}, {produto}, {pet}'}</p>
-            <textarea 
+            <textarea
               value={mensagem}
               onChange={(e) => setMensagem(e.target.value)}
-              className="w-full flex min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none" 
+              className="w-full flex min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
             />
           </div>
 
           <div className="pt-4 flex justify-end gap-3 border-t border-border mt-6">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={onClose}
               className="px-4 py-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground text-sm font-medium transition-colors"
             >
               Cancelar
             </button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading || !nome.trim() || !prazoRecompra}
               className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90 text-sm font-medium transition-opacity disabled:opacity-50"
             >

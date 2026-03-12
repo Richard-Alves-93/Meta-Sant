@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Meta, Lancamento, calcularVendasNecessarias, formatCurrency } from "@/lib/crm-data";
 import { Pencil, Trash2 } from "lucide-react";
 
@@ -8,8 +9,56 @@ interface MetaCardProps {
   onDelete?: (id: string) => void;
 }
 
+interface CalcResult {
+  totalVendido: number;
+  vendasRestantes: number;
+  diasRestantes: number;
+  vendasNecessarias: number;
+  percentual: number;
+  metaBatida: boolean;
+}
+
 const MetaCard = ({ meta, lancamentos, onEdit, onDelete }: MetaCardProps) => {
-  const calc = calcularVendasNecessarias(meta, lancamentos);
+  const [calc, setCalc] = useState<CalcResult | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const calculate = async () => {
+      try {
+        setLoading(true);
+        // Call with useWorkingDays = true by default
+        const result = await calcularVendasNecessarias(meta, lancamentos, true);
+        setCalc(result);
+      } catch (error) {
+        console.error('Error calculating sales:', error);
+        // Fallback to synchronous calculation if RLS or other error
+        try {
+          const result = await calcularVendasNecessarias(meta, lancamentos, false);
+          setCalc(result);
+        } catch (fallbackError) {
+          console.error('Fallback calculation also failed:', fallbackError);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    calculate();
+  }, [meta, lancamentos]);
+
+  if (!calc || loading) {
+    return (
+      <div className={`bg-card border rounded-xl p-6 shadow-sm animate-pulse`}>
+        <div className="h-4 bg-secondary rounded w-1/2 mb-4"></div>
+        <div className="h-8 bg-secondary rounded w-1/3 mb-4"></div>
+        <div className="space-y-2">
+          <div className="h-4 bg-secondary rounded w-full"></div>
+          <div className="h-4 bg-secondary rounded w-full"></div>
+          <div className="h-4 bg-secondary rounded w-full"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`bg-card border rounded-xl p-6 shadow-sm transition-all relative group ${calc.metaBatida ? "border-success/40 bg-success/5" : "border-border"}`}>
@@ -34,8 +83,12 @@ const MetaCard = ({ meta, lancamentos, onEdit, onDelete }: MetaCardProps) => {
           <span className="font-semibold text-card-foreground">{formatCurrency(calc.vendasRestantes)}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Necessário/dia:</span>
+          <span className="text-muted-foreground">Necessário/dia de trabalho:</span>
           <span className="font-semibold text-primary">{formatCurrency(calc.vendasNecessarias)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Dias de trabalho restantes:</span>
+          <span className="font-semibold text-primary">{calc.diasRestantes}</span>
         </div>
       </div>
 

@@ -100,9 +100,9 @@ const RecomprasPage = () => {
     }
   };
 
-  const handleStartNewCycle = async (data: { petId: string; productId: string; dataCompra: string }) => {
+  const handleStartNewCycle = async (data: { petId: string; productId: string; dataCompra: string; prazoRecompra: number }) => {
     try {
-      await startNewPurchaseCycle(data.petId, data.productId, data.dataCompra);
+      await startNewPurchaseCycle(data.petId, data.productId, data.dataCompra, data.prazoRecompra);
       toast.success("Novo ciclo iniciado!");
       loadData();
     } catch (error) {

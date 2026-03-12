@@ -58,10 +58,29 @@ export interface PetPurchase {
   data_lembrete: string;
   status: PetPurchaseStatus;
   purchase_history_id: string | null;
-  
+
   // Relations for joining data
   pet?: Pet;
   product?: Product;
+}
+
+export type WorkMode = 'Segunda-sexta' | 'Segunda-sabado' | 'Todos os dias' | 'Personalizado';
+
+export interface WorkSettings {
+  id: string;
+  user_id: string;
+  work_mode: WorkMode;
+  custom_schedule_json?: Record<string, boolean> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CustomHoliday {
+  id: string;
+  user_id: string;
+  data: string;
+  descricao?: string | null;
+  created_at: string;
 }
 
 export interface CrmDatabase {
@@ -85,11 +104,25 @@ export function getLancamentosDoMes(db: CrmDatabase): Lancamento[] {
   });
 }
 
-export function calcularVendasNecessarias(meta: Meta, lancamentos: Lancamento[]) {
+export async function calcularVendasNecessarias(meta: Meta, lancamentos: Lancamento[], useWorkingDays: boolean = true) {
   const totalVendido = lancamentos.reduce((sum, l) => sum + l.valorLiquido, 0);
   const hoje = new Date();
-  const diasMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
-  const diasRestantes = diasMes - hoje.getDate() + 1;
+
+  let diasRestantes: number;
+
+  if (useWorkingDays) {
+    try {
+      diasRestantes = await getRemainingWorkingDays(hoje);
+    } catch (error) {
+      // Fallback to calendar days if working days calculation fails
+      const diasMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+      diasRestantes = diasMes - hoje.getDate() + 1;
+    }
+  } else {
+    const diasMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+    diasRestantes = diasMes - hoje.getDate() + 1;
+  }
+
   const vendasRestantes = Math.max(0, meta.valor - totalVendido);
   const vendasNecessarias = diasRestantes > 0 ? vendasRestantes / diasRestantes : 0;
   const percentual = Math.min((totalVendido / meta.valor) * 100, 100);
@@ -448,7 +481,7 @@ export async function registerRepurchase(purchaseId: string, newProductId: strin
   });
 }
 
-export async function startNewPurchaseCycle(petId: string, productId: string, dataCompraStr: string) {
+export async function startNewPurchaseCycle(petId: string, productId: string, dataCompraStr: string, diasRecompra?: number) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
@@ -460,10 +493,13 @@ export async function startNewPurchaseCycle(petId: string, productId: string, da
 
   if (prodErr || !product) throw new Error('Product not found');
 
+  // Use provided diasRecompra, fallback to product default
+  const dias = diasRecompra || product.prazo_recompra_dias;
+
   const dataCompra = new Date(dataCompraStr);
   const proximaData = new Date(dataCompra);
-  proximaData.setDate(proximaData.getDate() + product.prazo_recompra_dias);
-  
+  proximaData.setDate(proximaData.getDate() + dias);
+
   const dataLembrete = new Date(proximaData);
   dataLembrete.setDate(dataLembrete.getDate() - product.dias_aviso_previo);
 
@@ -472,11 +508,127 @@ export async function startNewPurchaseCycle(petId: string, productId: string, da
     pet_id: petId,
     product_id: productId,
     data_compra: dataCompraStr,
-    dias_recompra: product.prazo_recompra_dias,
+    dias_recompra: dias,
     proxima_data: proximaData.toISOString().split('T')[0],
     dias_aviso_previo: product.dias_aviso_previo,
     data_lembrete: dataLembrete.toISOString().split('T')[0],
     status: 'Ativo',
     purchase_history_id: null
   });
+}
+
+// ---- Work Settings Module ----
+
+export async function getWorkSettings(): Promise<WorkSettings | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from('work_settings')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+
+  return data as WorkSettings | null;
+}
+
+export async function getRemainingWorkingDays(fromDate?: Date): Promise<number> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const currentDate = fromDate || new Date();
+  const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+  // Fetch work settings and holidays
+  const [settingsRes, holidaysRes] = await Promise.all([
+    supabase.from('work_settings').select('*').eq('user_id', user.id).single(),
+    supabase.from('custom_holidays').select('*').eq('user_id', user.id),
+  ]);
+
+  const workSettings = settingsRes.data as WorkSettings | null;
+  const holidays = (holidaysRes.data || []) as CustomHoliday[];
+
+  const holidayDates = new Set(holidays.map(h => h.data));
+  const workMode = workSettings?.work_mode || 'Segunda-sexta';
+
+  let workingDays = 0;
+  const dateIterator = new Date(currentDate);
+  dateIterator.setHours(0, 0, 0, 0);
+
+  while (dateIterator <= lastDayOfMonth) {
+    const dateStr = dateIterator.toISOString().split('T')[0];
+
+    if (!holidayDates.has(dateStr)) {
+      const dayOfWeek = dateIterator.getDay();
+
+      let isWorkDay = false;
+      if (workMode === 'Segunda-sexta') {
+        isWorkDay = dayOfWeek >= 1 && dayOfWeek <= 5;
+      } else if (workMode === 'Segunda-sabado') {
+        isWorkDay = dayOfWeek >= 1 && dayOfWeek <= 6;
+      } else if (workMode === 'Todos os dias') {
+        isWorkDay = true;
+      } else if (workMode === 'Personalizado') {
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const customSchedule = workSettings?.custom_schedule_json || {};
+        isWorkDay = customSchedule[dayNames[dayOfWeek]] === true;
+      }
+
+      if (isWorkDay) {
+        workingDays++;
+      }
+    }
+
+    dateIterator.setDate(dateIterator.getDate() + 1);
+  }
+
+  return Math.max(1, workingDays);
+}
+
+export async function saveWorkSettings(workMode: WorkMode, customSchedule?: Record<string, boolean>) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase.from('work_settings').upsert({
+    user_id: user.id,
+    work_mode: workMode,
+    custom_schedule_json: customSchedule || null,
+    updated_at: new Date().toISOString(),
+  }, {
+    onConflict: 'user_id',
+  });
+
+  if (error) throw error;
+}
+
+export async function addCustomHoliday(data: string, descricao?: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase.from('custom_holidays').insert({
+    user_id: user.id,
+    data,
+    descricao,
+  });
+
+  if (error) throw error;
+}
+
+export async function deleteCustomHoliday(holidayId: string) {
+  const { error } = await supabase.from('custom_holidays').delete().eq('id', holidayId);
+  if (error) throw error;
+}
+
+export async function fetchCustomHolidays(): Promise<CustomHoliday[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('custom_holidays')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('data', { ascending: true });
+
+  if (error) throw error;
+  return data as CustomHoliday[];
 }

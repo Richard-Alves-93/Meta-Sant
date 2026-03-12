@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CrmDatabase, exportarDadosJSON, deleteMeta, deleteLancamento, addMeta, addLancamento } from "@/lib/crm-data";
 import { hexToHslStr } from "@/lib/colors";
 import { toast } from "sonner";
+import { WorkSettingsSection } from "./WorkSettingsSection";
 
 interface ConfiguracoesPageProps {
   db: CrmDatabase;
@@ -182,6 +183,8 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
           </div>
         </div>
 
+        <WorkSettingsSection />
+
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
           <h3 className="font-semibold text-card-foreground mb-2">📥 Exportar & 📤 Importar Backup</h3>
           <p className="text-sm text-muted-foreground mb-4">Exporte um backup completo do seu sistema (incluindo cores, logotipo, metas e lançamentos) e importe quando precisar.</p>
@@ -201,7 +204,7 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <div className="text-xs text-muted-foreground mb-1">Versão</div>
-              <div className="font-semibold text-card-foreground">4.0.0</div>
+              <div className="font-semibold text-card-foreground">4.0.1</div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground mb-1">Armazenamento</div>

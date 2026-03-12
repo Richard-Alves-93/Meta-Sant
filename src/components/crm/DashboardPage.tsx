@@ -1,11 +1,12 @@
-import { useMemo } from "react";
-import { CrmDatabase, getLancamentosDoMes, formatCurrency, getDiasMes, calcularVendasNecessarias, Lancamento, formatDate } from "@/lib/crm-data";
+import { useMemo, useState, useEffect } from "react";
+import { CrmDatabase, getLancamentosDoMes, formatCurrency, getDiasMes, calcularVendasNecessarias, Lancamento, formatDate, getRemainingWorkingDays } from "@/lib/crm-data";
 import KpiCard from "./KpiCard";
 import MetaCard from "./MetaCard";
 import RecomprasHoje from "../dashboard/RecomprasHoje";
 import { Meta } from "@/lib/crm-data";
 import { DollarSign, TrendingDown, Activity, TrendingUp, MessageCircle } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from "recharts";
+import { toast } from "sonner";
 
 interface DashboardPageProps {
   db: CrmDatabase;
@@ -16,7 +17,24 @@ interface DashboardPageProps {
 }
 
 const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta, onNavigateToRecompras }: DashboardPageProps) => {
+  const [remainingWorkDays, setRemainingWorkDays] = useState(0);
+
   const lancamentosMes = useMemo(() => getLancamentosDoMes(db), [db]);
+
+  // Get remaining work days on component mount/update
+  useEffect(() => {
+    const fetchRemainingDays = async () => {
+      try {
+        const days = await getRemainingWorkingDays();
+        setRemainingWorkDays(days);
+      } catch (error) {
+        console.error('Error getting remaining work days:', error);
+        setRemainingWorkDays(0);
+      }
+    };
+
+    fetchRemainingDays();
+  }, []);
 
   const totalLiquido = lancamentosMes.reduce((s, l) => s + l.valorLiquido, 0);
   const totalDesconto = lancamentosMes.reduce((s, l) => s + l.desconto, 0);
@@ -55,23 +73,34 @@ const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta, onNavig
     [db]
   );
 
-  const handleShareAllMetas = () => {
+  const handleShareAllMetas = async () => {
     if (db.metas.length === 0) return;
-    
-    let text = `🎯 *Resumo Diário das Metas*\n\n`;
-    
-    db.metas.forEach(meta => {
-      const calc = calcularVendasNecessarias(meta, lancamentosMes);
-      text += `📌 *${meta.nome}*\n`;
-      text += `💰 Objetivo: ${formatCurrency(meta.valor)}\n`;
-      text += `✅ Vendido: ${formatCurrency(calc.totalVendido)} (${Math.round(calc.percentual)}%)\n`;
-      text += `⏳ Faltam: ${formatCurrency(calc.vendasRestantes)}\n`;
-      text += `📅 Necessário/dia: ${formatCurrency(calc.vendasNecessarias)}\n`;
-      text += `${calc.metaBatida ? "🎉 Meta batida! 🚀" : "💪 Foco na meta!"}\n\n`;
-    });
 
-    const url = `https://wa.me/?text=${encodeURIComponent(text.trim())}`;
-    window.open(url, '_blank');
+    try {
+      let text = `🎯 *Resumo Diário das Metas*\n\n`;
+
+      // Get all calculations asynchronously
+      const calculations = await Promise.all(
+        db.metas.map(meta => calcularVendasNecessarias(meta, lancamentosMes))
+      );
+
+      db.metas.forEach((meta, index) => {
+        const calc = calculations[index];
+        text += `📌 *${meta.nome}*\n`;
+        text += `💰 Objetivo: ${formatCurrency(meta.valor)}\n`;
+        text += `✅ Vendido: ${formatCurrency(calc.totalVendido)} (${Math.round(calc.percentual)}%)\n`;
+        text += `⏳ Faltam: ${formatCurrency(calc.vendasRestantes)}\n`;
+        text += `📅 Necessário/dia: ${formatCurrency(calc.vendasNecessarias)}\n`;
+        text += `📊 Dias de trabalho restantes: ${calc.diasRestantes}\n`;
+        text += `${calc.metaBatida ? "🎉 Meta batida! 🚀" : "💪 Foco na meta!"}\n\n`;
+      });
+
+      const url = `https://wa.me/?text=${encodeURIComponent(text.trim())}`;
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error sharing metas:', error);
+      toast.error('Erro ao compartilhar metas');
+    }
   };
 
   return (
@@ -84,7 +113,7 @@ const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta, onNavig
             + Lançar venda do dia
           </button>
           {db.metas.length > 0 && (
-            <button 
+            <button
               onClick={handleShareAllMetas}
               className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#25D366] text-white text-sm font-medium hover:bg-[#20bd5a] transition-colors"
             >
@@ -94,6 +123,14 @@ const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta, onNavig
           )}
         </div>
       </div>
+
+      {remainingWorkDays > 0 && (
+        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <p className="text-sm text-blue-700">
+            <strong>Dias de trabalho restantes este mês:</strong> {remainingWorkDays}
+          </p>
+        </div>
+      )}
 
       {db.metas.length > 0 && (
         <div className="mb-8">
@@ -151,7 +188,7 @@ const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta, onNavig
             </div>
           </div>
         </div>
-        
+
         <div className="lg:col-span-1">
           <RecomprasHoje onNavigateToRecompras={onNavigateToRecompras} />
         </div>
