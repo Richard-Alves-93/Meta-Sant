@@ -1,6 +1,6 @@
-import { BarChart3, FileText, Target, TrendingUp, Settings, X } from "lucide-react";
+import { BarChart3, FileText, Target, TrendingUp, Settings, X, Users, RefreshCw } from "lucide-react";
 
-export type CrmPage = "dashboard" | "lancamentos" | "metas" | "relatorios" | "configuracoes";
+export type CrmPage = "dashboard" | "lancamentos" | "metas" | "cadastros" | "recompras" | "relatorios" | "configuracoes";
 
 interface CrmSidebarProps {
   currentPage: CrmPage;
@@ -14,6 +14,8 @@ const navItems: { page: CrmPage; label: string; icon: React.ReactNode }[] = [
   { page: "dashboard", label: "Dashboard", icon: <BarChart3 size={20} /> },
   { page: "lancamentos", label: "Lançamentos", icon: <FileText size={20} /> },
   { page: "metas", label: "Metas", icon: <Target size={20} /> },
+  { page: "cadastros", label: "Cadastros", icon: <Users size={20} /> },
+  { page: "recompras", label: "Recompras", icon: <RefreshCw size={20} /> },
   { page: "relatorios", label: "Relatórios", icon: <TrendingUp size={20} /> },
   { page: "configuracoes", label: "Configurações", icon: <Settings size={20} /> },
 ];

@@ -47,7 +47,7 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!confirm("Atenção: A restauração de backup APAGARÁ todas as suas metas e lançamentos atuais para substituí-las pelo backup. Deseja continuar?")) {
+    if (!confirm("Atenção: Restaurar um backup antigo (V3) substituirá APENAS suas Metas e Vendas. Todos os seus novos Tutores, Pets e Recompras (V4) continuarão seguros. Deseja continuar?")) {
       if (e.target) e.target.value = '';
       return;
     }
@@ -61,8 +61,8 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
         let metasToRestore = [];
         let lancamentosToRestore = [];
 
-        // Check format
-        if (backup.versao && backup.db) {
+        // Relax format checking
+        if (backup.versao || backup.db || backup.metas || backup.lancamentos) {
             // Restore configs
             if (backup.config) {
                 if (backup.config.logo) {
@@ -79,12 +79,19 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
                     document.documentElement.style.setProperty('--sidebar-ring', hexToHslStr(color));
                 }
             }
-            metasToRestore = backup.db.metas || [];
-            lancamentosToRestore = backup.db.lancamentos || [];
+            
+            if (backup.db) {
+              metasToRestore = backup.db.metas || [];
+              lancamentosToRestore = backup.db.lancamentos || [];
+            } else {
+              metasToRestore = backup.metas || [];
+              lancamentosToRestore = backup.lancamentos || [];
+            }
+        } else if (Array.isArray(backup) && backup.length > 0 && backup[0].hasOwnProperty('valorBruto')) {
+            // Very old pure array format just in case
+            lancamentosToRestore = backup;
         } else {
-            // Old db-only format
-            metasToRestore = backup.metas || [];
-            lancamentosToRestore = backup.lancamentos || [];
+            throw new Error("Formato de arquivo irreconhecível.");
         }
 
         // Delete existing data line by line
@@ -100,14 +107,14 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
           await addMeta(m.nome, m.valor, m.descricao || '');
         }
         for (const l of lancamentosToRestore) {
-          await addLancamento(l.data, l.valorBruto || l.valor_bruto, l.desconto);
+          await addLancamento(l.data, l.valorBruto || l.valor_bruto || 0, l.desconto || 0);
         }
 
         toast.success("Backup restaurado com sucesso!");
         await onRefresh();
-      } catch (err) {
+      } catch (err: any) {
         console.error("Erro ao importar backup:", err);
-        toast.error("Falha ao importar o arquivo de backup. Ele pode estar num formato inválido.");
+        toast.error(`Erro ao importar: ${err?.message || "O arquivo não pôde ser processado."}`);
       }
       
       if (e.target) e.target.value = '';

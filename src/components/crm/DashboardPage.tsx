@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { CrmDatabase, getLancamentosDoMes, formatCurrency, getDiasMes, calcularVendasNecessarias, Lancamento, formatDate } from "@/lib/crm-data";
 import KpiCard from "./KpiCard";
 import MetaCard from "./MetaCard";
+import RecomprasHoje from "../dashboard/RecomprasHoje";
 import { Meta } from "@/lib/crm-data";
 import { DollarSign, TrendingDown, Activity, TrendingUp, MessageCircle } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from "recharts";
@@ -11,9 +12,10 @@ interface DashboardPageProps {
   onOpenLancamento: () => void;
   onEditMeta: (meta: Meta) => void;
   onDeleteMeta: (id: string) => void;
+  onNavigateToRecompras: () => void;
 }
 
-const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta }: DashboardPageProps) => {
+const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta, onNavigateToRecompras }: DashboardPageProps) => {
   const lancamentosMes = useMemo(() => getLancamentosDoMes(db), [db]);
 
   const totalLiquido = lancamentosMes.reduce((s, l) => s + l.valorLiquido, 0);
@@ -111,41 +113,47 @@ const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta }: Dashb
         <KpiCard label="Projeção Final" value={formatCurrency(projecao)} icon={<TrendingUp size={18} />} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-          <h3 className="font-semibold text-card-foreground mb-4">Vendas por Dia</h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={vendasPorDia}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="dia" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-          <h3 className="font-semibold text-card-foreground mb-4">Meta vs Realizado</h3>
-          <div className="h-[300px]">
-            {metaVsRealizado.length > 0 ? (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="lg:col-span-2 grid grid-cols-1 gap-6">
+          <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+            <h3 className="font-semibold text-card-foreground mb-4">Vendas por Dia</h3>
+            <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={metaVsRealizado}>
+                <BarChart data={vendasPorDia}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="dia" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
                   <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
                   <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                  <Legend />
-                  <Line type="monotone" dataKey="meta" stroke="hsl(var(--success))" strokeWidth={2} dot={false} name="Meta" />
-                  <Line type="monotone" dataKey="realizado" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} name="Realizado" />
-                </LineChart>
+                  <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Crie uma meta para ver o gráfico</div>
-            )}
+            </div>
           </div>
+
+          <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+            <h3 className="font-semibold text-card-foreground mb-4">Meta vs Realizado</h3>
+            <div className="h-[300px]">
+              {metaVsRealizado.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={metaVsRealizado}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="dia" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                    <Legend />
+                    <Line type="monotone" dataKey="meta" stroke="hsl(var(--success))" strokeWidth={2} dot={false} name="Meta" />
+                    <Line type="monotone" dataKey="realizado" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} name="Realizado" />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Crie uma meta para ver o gráfico</div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="lg:col-span-1">
+          <RecomprasHoje onNavigateToRecompras={onNavigateToRecompras} />
         </div>
       </div>
 

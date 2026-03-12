@@ -15,6 +15,55 @@ export interface Lancamento {
   valorLiquido: number;
 }
 
+export interface Customer {
+  id: string;
+  nome: string;
+  telefone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  observacoes: string | null;
+}
+
+export interface Pet {
+  id: string;
+  customer_id: string;
+  nome: string;
+  especie: string | null;
+  raca: string | null;
+  data_aniversario: string | null;
+  sexo: string | null;
+  porte: string | null;
+  peso: number | null;
+}
+
+export interface Product {
+  id: string;
+  nome: string;
+  categoria: string | null;
+  prazo_recompra_dias: number;
+  dias_aviso_previo: number;
+  mensagem_padrao: string | null;
+}
+
+export type PetPurchaseStatus = 'Ativo' | 'Avisar em breve' | 'Avisar hoje' | 'Notificado' | 'Recompra registrada' | 'Trocado' | 'Vencido' | 'Cancelado';
+
+export interface PetPurchase {
+  id: string;
+  pet_id: string;
+  product_id: string;
+  data_compra: string;
+  dias_recompra: number;
+  proxima_data: string;
+  dias_aviso_previo: number;
+  data_lembrete: string;
+  status: PetPurchaseStatus;
+  purchase_history_id: string | null;
+  
+  // Relations for joining data
+  pet?: Pet;
+  product?: Product;
+}
+
 export interface CrmDatabase {
   metas: Meta[];
   lancamentos: Lancamento[];
@@ -118,20 +167,33 @@ export async function deleteLancamento(id: string) {
 
 export async function exportarDadosJSON() {
   const db = await fetchDatabase();
+  
+  // Buscar os dados das novas tabelas V4
+  const { data: customers } = await supabase.from('customers').select('*');
+  const { data: pets } = await supabase.from('pets').select('*');
+  const { data: products } = await supabase.from('products').select('*');
+  const { data: pet_purchases } = await supabase.from('pet_purchases').select('*');
+
   const backup = {
-    versao: 1,
+    versao: 4,
     dataHora: new Date().toISOString(),
     config: {
       logo: localStorage.getItem('crm_custom_logo'),
       primaryColor: localStorage.getItem('crm_custom_primary_color')
     },
-    db: db
+    db: {
+      ...db,
+      customers: customers || [],
+      pets: pets || [],
+      products: products || [],
+      pet_purchases: pet_purchases || []
+    }
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `crm-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.download = `crm-v4-backup-${new Date().toISOString().split('T')[0]}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -150,4 +212,239 @@ export async function exportarExcel() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Lançamentos");
   XLSX.writeFile(wb, `lancamentos-${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+// ---- Petshop Repurchase Module API ----
+
+export async function fetchCustomers(): Promise<Customer[]> {
+  const { data, error } = await supabase.from('customers').select('*').order('nome');
+  if (error) throw error;
+  return data as Customer[];
+}
+
+export async function addCustomer(customer: Omit<Customer, 'id'>) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  await supabase.from('customers').insert({ ...customer, user_id: user.id });
+}
+
+export async function updateCustomer(id: string, customer: Partial<Omit<Customer, 'id'>>) {
+  await supabase.from('customers').update(customer).eq('id', id);
+}
+
+export async function deleteCustomer(id: string) {
+  await supabase.from('customers').delete().eq('id', id);
+}
+
+// Pets
+export async function fetchPets(): Promise<Pet[]> {
+  const { data, error } = await supabase.from('pets').select('*').order('nome');
+  if (error) throw error;
+  return data as Pet[];
+}
+
+export async function fetchPetsByCustomer(customerId: string): Promise<Pet[]> {
+  const { data, error } = await supabase.from('pets').select('*').eq('customer_id', customerId).order('nome');
+  if (error) throw error;
+  return data as Pet[];
+}
+
+export async function addPet(pet: Omit<Pet, 'id'>) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  await supabase.from('pets').insert({ ...pet, user_id: user.id });
+}
+
+export async function updatePet(id: string, pet: Partial<Omit<Pet, 'id'>>) {
+  await supabase.from('pets').update(pet).eq('id', id);
+}
+
+export async function deletePet(id: string) {
+  await supabase.from('pets').delete().eq('id', id);
+}
+
+// Products
+export async function fetchProducts(): Promise<Product[]> {
+  const { data, error } = await supabase.from('products').select('*').order('nome');
+  if (error) throw error;
+  return data as Product[];
+}
+
+export async function addProduct(product: Omit<Product, 'id'>) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  await supabase.from('products').insert({ ...product, user_id: user.id });
+}
+
+export async function updateProduct(id: string, product: Partial<Omit<Product, 'id'>>) {
+  await supabase.from('products').update(product).eq('id', id);
+}
+
+export async function deleteProduct(id: string) {
+  await supabase.from('products').delete().eq('id', id);
+}
+
+// Pet Purchases (Recompras)
+export async function fetchPetPurchases(): Promise<PetPurchase[]> {
+  const { data, error } = await supabase
+    .from('pet_purchases')
+    .select(`
+      *,
+      pet:pets(*),
+      product:products(*)
+    `)
+    .order('proxima_data', { ascending: true });
+  if (error) throw error;
+  return data as PetPurchase[];
+}
+
+export async function addPetPurchase(purchase: Omit<PetPurchase, 'id' | 'pet' | 'product'>) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  
+  // Calculate reminder date if not provided
+  let data_lembrete = purchase.data_lembrete;
+  if (!data_lembrete && purchase.proxima_data && purchase.dias_aviso_previo) {
+    const prox = new Date(purchase.proxima_data);
+    prox.setDate(prox.getDate() - purchase.dias_aviso_previo);
+    data_lembrete = prox.toISOString().split('T')[0];
+  }
+
+  await supabase.from('pet_purchases').insert({ ...purchase, data_lembrete, user_id: user.id });
+}
+
+export async function updatePetPurchase(id: string, purchase: Partial<Omit<PetPurchase, 'id' | 'pet' | 'product'>>) {
+  await supabase.from('pet_purchases').update(purchase).eq('id', id);
+}
+
+export async function deletePetPurchase(id: string) {
+  await supabase.from('pet_purchases').delete().eq('id', id);
+}
+
+export async function fetchPurchases(filters?: { status?: PetPurchaseStatus }): Promise<(PetPurchase & { customer?: Customer, pet?: Pet, product?: Product })[]> {
+  let query = supabase
+    .from('pet_purchases')
+    .select(`
+      *,
+      pet:pets(*, customer:customers(*)),
+      product:products(*)
+    `)
+    .order('proxima_data', { ascending: true });
+    
+  if (filters?.status) {
+    query = query.eq('status', filters.status);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  
+  // Map nested customer up for easier access in UI
+  return (data || []).map(item => ({
+    ...item,
+    customer: item.pet?.customer
+  })) as any[];
+}
+
+export async function updatePurchaseStatus(purchaseId: string, status: PetPurchaseStatus) {
+  await supabase.from('pet_purchases').update({ status }).eq('id', purchaseId);
+}
+
+export async function registerWhatsAppLog(purchaseId: string, telefone: string, mensagem: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  
+  await supabase.from('whatsapp_logs').insert({
+    user_id: user.id,
+    purchase_id: purchaseId,
+    telefone,
+    mensagem
+  });
+  
+  // Update purchase status
+  await updatePurchaseStatus(purchaseId, 'Notificado');
+}
+
+export async function registerRepurchase(purchaseId: string, newProductId: string, dataCompraStr: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // 1. Fetch current purchase
+  const { data: currentPurchase, error: fetchErr } = await supabase
+    .from('pet_purchases')
+    .select('*')
+    .eq('id', purchaseId)
+    .single();
+
+  if (fetchErr || !currentPurchase) throw new Error('Purchase not found');
+
+  // 2. Fetch new product to get deadlines
+  const { data: newProduct, error: prodErr } = await supabase
+    .from('products')
+    .select('*')
+    .eq('id', newProductId)
+    .single();
+
+  if (prodErr || !newProduct) throw new Error('Product not found');
+
+  // 3. Mark current as "Recompra registrada" or "Trocado"
+  const isTrocado = currentPurchase.product_id !== newProductId;
+  await supabase
+    .from('pet_purchases')
+    .update({ status: isTrocado ? 'Trocado' : 'Recompra registrada' })
+    .eq('id', purchaseId);
+
+  // 4. Calculate new dates
+  const dataCompra = new Date(dataCompraStr);
+  const proximaData = new Date(dataCompra);
+  proximaData.setDate(proximaData.getDate() + newProduct.prazo_recompra_dias);
+  
+  const dataLembrete = new Date(proximaData);
+  dataLembrete.setDate(dataLembrete.getDate() - newProduct.dias_aviso_previo);
+
+  // 5. Insert new cycle linked to old one
+  await supabase.from('pet_purchases').insert({
+    user_id: user.id,
+    pet_id: currentPurchase.pet_id,
+    product_id: newProductId,
+    data_compra: dataCompraStr,
+    dias_recompra: newProduct.prazo_recompra_dias,
+    proxima_data: proximaData.toISOString().split('T')[0],
+    dias_aviso_previo: newProduct.dias_aviso_previo,
+    data_lembrete: dataLembrete.toISOString().split('T')[0],
+    status: 'Ativo',
+    purchase_history_id: currentPurchase.id // Link to previous cycle
+  });
+}
+
+export async function startNewPurchaseCycle(petId: string, productId: string, dataCompraStr: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data: product, error: prodErr } = await supabase
+    .from('products')
+    .select('*')
+    .eq('id', productId)
+    .single();
+
+  if (prodErr || !product) throw new Error('Product not found');
+
+  const dataCompra = new Date(dataCompraStr);
+  const proximaData = new Date(dataCompra);
+  proximaData.setDate(proximaData.getDate() + product.prazo_recompra_dias);
+  
+  const dataLembrete = new Date(proximaData);
+  dataLembrete.setDate(dataLembrete.getDate() - product.dias_aviso_previo);
+
+  await supabase.from('pet_purchases').insert({
+    user_id: user.id,
+    pet_id: petId,
+    product_id: productId,
+    data_compra: dataCompraStr,
+    dias_recompra: product.prazo_recompra_dias,
+    proxima_data: proximaData.toISOString().split('T')[0],
+    dias_aviso_previo: product.dias_aviso_previo,
+    data_lembrete: dataLembrete.toISOString().split('T')[0],
+    status: 'Ativo',
+    purchase_history_id: null
+  });
 }

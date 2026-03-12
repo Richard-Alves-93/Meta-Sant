@@ -3,6 +3,8 @@ import CrmSidebar, { CrmPage } from "@/components/crm/CrmSidebar";
 import DashboardPage from "@/components/crm/DashboardPage";
 import LancamentosPage from "@/components/crm/LancamentosPage";
 import MetasPage from "@/components/crm/MetasPage";
+import CadastrosPage from "@/components/crm/CadastrosPage";
+import RecomprasPage from "@/components/crm/RecomprasPage";
 import RelatoriosPage from "@/components/crm/RelatoriosPage";
 import ConfiguracoesPage from "@/components/crm/ConfiguracoesPage";
 import MetaModal from "@/components/crm/MetaModal";
@@ -149,7 +151,8 @@ const Index = () => {
         <div className="flex-1 p-4 md:p-8 overflow-x-hidden">
           {page === "dashboard" && (
             <DashboardPage db={db} onOpenLancamento={() => { setEditingLanc(null); setLancModalOpen(true); }}
-              onEditMeta={handleEditMeta} onDeleteMeta={handleDeleteMeta} />
+              onEditMeta={handleEditMeta} onDeleteMeta={handleDeleteMeta} 
+              onNavigateToRecompras={() => { setPage("recompras"); setIsSidebarOpen(false); }} />
           )}
           {page === "lancamentos" && (
             <LancamentosPage db={db} onAdd={handleAddLancInline}
@@ -159,6 +162,12 @@ const Index = () => {
           {page === "metas" && (
             <MetasPage db={db} onAdd={() => { setEditingMeta(null); setMetaModalOpen(true); }}
               onEdit={handleEditMeta} onDelete={handleDeleteMeta} />
+          )}
+          {page === "cadastros" && (
+            <CadastrosPage />
+          )}
+          {page === "recompras" && (
+            <RecomprasPage />
           )}
           {page === "relatorios" && (
             <RelatoriosPage db={db} onExportExcel={handleExportExcel} />
