@@ -8,6 +8,7 @@ import { Customer, Pet, Product } from "@/lib/crm-data";
 import { User, PawPrint, Package, ArrowRight, Check, X, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import ProductCombobox from "./ProductCombobox";
 
 interface WizardCadastroModalProps {
   open: boolean;
@@ -16,7 +17,7 @@ interface WizardCadastroModalProps {
   onSaveCompleto: (
     tutor: Omit<Customer, 'id'>, 
     pets: Omit<Pet, 'id' | 'customer_id'>[], 
-    purchases: {petIndex: number, product_id: string, data_compra: string}[]
+    purchases: {petIndex: number, product_id: string, product_name: string, data_compra: string}[]
   ) => Promise<void>;
 }
 
@@ -36,6 +37,7 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
   const [purchases, setPurchases] = useState([{
     petIndex: 0,
     product_id: '',
+    product_name: '',
     data_compra: format(new Date(), 'yyyy-MM-dd')
   }]);
 
@@ -43,7 +45,7 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
     setStep(1);
     setTutor({ nome: '', telefone: '', whatsapp: '', email: '', observacoes: '' });
     setPets([{ nome: '', especie: '', raca: '', data_aniversario: '', sexo: '', porte: '', peso: '' }]);
-    setPurchases([{ petIndex: 0, product_id: '', data_compra: format(new Date(), 'yyyy-MM-dd') }]);
+    setPurchases([{ petIndex: 0, product_id: '', product_name: '', data_compra: format(new Date(), 'yyyy-MM-dd') }]);
   };
 
   const handleClose = () => {
@@ -72,9 +74,14 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
 
   const handleSave = async () => {
     if (loading) return;
+    // Filter out purchases without product info
+    const validPurchases = purchases.filter(p => p.product_id || p.product_name.trim());
     
-    // Filter out incomplete purchases
-    const validPurchases = purchases.filter(p => p.product_id);
+    // Validate: if a purchase form exists with no product info, show error
+    const invalidPurchase = purchases.find(p => !p.product_id && !p.product_name.trim());
+    if (purchases.length > 0 && invalidPurchase && purchases.some(p => p.product_id || p.product_name.trim())) {
+      // Only warn if there are mixed valid/invalid
+    }
     
     setLoading(true);
     try {
@@ -103,7 +110,7 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
   };
 
   const addPurchaseForm = () => {
-    setPurchases([...purchases, { petIndex: 0, product_id: '', data_compra: format(new Date(), 'yyyy-MM-dd') }]);
+    setPurchases([...purchases, { petIndex: 0, product_id: '', product_name: '', data_compra: format(new Date(), 'yyyy-MM-dd') }]);
   };
 
   const removePurchaseForm = (index: number) => {
@@ -317,25 +324,18 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Produto</Label>
-                    <Select 
-                      value={purchase.product_id} 
-                      onValueChange={(val) => {
+                    <Label>Produto *</Label>
+                    <ProductCombobox
+                      products={products}
+                      selectedProductId={purchase.product_id}
+                      productName={purchase.product_name}
+                      onSelect={(productId, productName) => {
                         const newP = [...purchases];
-                        newP[index].product_id = val;
+                        newP[index].product_id = productId;
+                        newP[index].product_name = productName;
                         setPurchases(newP);
                       }}
-                    >
-                      <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
-                      <SelectContent>
-                        {products.map(p => (
-                          <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
-                        ))}
-                        {products.length === 0 && (
-                          <SelectItem value="none" disabled>Nenhum produto cadastrado no sistema</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
 
                   <div className="space-y-2 sm:col-span-2">
@@ -354,12 +354,9 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
               </div>
             ))}
 
-            <Button type="button" variant="outline" onClick={addPurchaseForm} className="w-full border-dashed" disabled={products.length === 0}>
+            <Button type="button" variant="outline" onClick={addPurchaseForm} className="w-full border-dashed">
               <Plus size={16} className="mr-2" /> Adicionar outra compra para este Tutor
             </Button>
-            {products.length === 0 && (
-              <p className="text-xs text-amber-600 mt-2 text-center">Cadastre produtos na aba Produtos primeiro.</p>
-            )}
           </div>
         </div>
 

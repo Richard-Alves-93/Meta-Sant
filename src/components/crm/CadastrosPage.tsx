@@ -5,7 +5,8 @@ import {
   Customer, Pet, Product,
   fetchCustomers, addCustomer, updateCustomer, deleteCustomer,
   fetchPets, addPet, updatePet, deletePet,
-  fetchProducts, addProduct, updateProduct, deleteProduct
+  fetchProducts, addProduct, updateProduct, deleteProduct,
+  findOrCreateProduct
 } from "@/lib/crm-data";
 import { toast } from "sonner";
 import ClienteModal from "./ClienteModal";
@@ -154,7 +155,7 @@ const CadastrosPage = () => {
   const handleSaveCadastroCompleto = async (
     tutor: Omit<Customer, 'id'>, 
     petsList: Omit<Pet, 'id' | 'customer_id'>[],
-    purchasesList: {petIndex: number, product_id: string, data_compra: string}[]
+    purchasesList: {petIndex: number, product_id: string, product_name: string, data_compra: string}[]
   ) => {
     try {
       // 1. Salvar Tutor
@@ -171,12 +172,19 @@ const CadastrosPage = () => {
 
       // 3. Salvar Compras (Registrar primeira recompra se houver produto vinculado)
       for (const purchase of purchasesList) {
-        if (!purchase.product_id) continue;
+        if (!purchase.product_id && !purchase.product_name.trim()) continue;
         
         const targetPet = createdPets[purchase.petIndex];
         if (!targetPet) continue;
 
-        await startNewPurchaseCycle(targetPet.id, purchase.product_id, purchase.data_compra);
+        // Resolve product_id: use existing or create new
+        let productId = purchase.product_id;
+        if (!productId && purchase.product_name.trim()) {
+          const product = await findOrCreateProduct(purchase.product_name.trim());
+          productId = product.id;
+        }
+
+        await startNewPurchaseCycle(targetPet.id, productId, purchase.data_compra);
       }
 
       loadData();
