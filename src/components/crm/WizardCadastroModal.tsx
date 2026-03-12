@@ -15,7 +15,7 @@ interface WizardCadastroModalProps {
   products: Product[];
   onSaveCompleto: (
     tutor: Omit<Customer, 'id'>, 
-    pets: Omit<Pet, 'id'>[], 
+    pets: Omit<Pet, 'id' | 'customer_id'>[], 
     purchases: {petIndex: number, product_id: string, data_compra: string}[]
   ) => Promise<void>;
 }
