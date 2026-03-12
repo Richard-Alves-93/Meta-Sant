@@ -8,6 +8,7 @@ import { Customer, Pet, Product } from "@/lib/crm-data";
 import { User, PawPrint, Package, ArrowRight, Check, X, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import ProductCombobox from "./ProductCombobox";
 
 interface WizardCadastroModalProps {
   open: boolean;
