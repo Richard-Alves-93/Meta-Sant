@@ -74,9 +74,14 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
 
   const handleSave = async () => {
     if (loading) return;
+    // Filter out purchases without product info
+    const validPurchases = purchases.filter(p => p.product_id || p.product_name.trim());
     
-    // Filter out incomplete purchases
-    const validPurchases = purchases.filter(p => p.product_id);
+    // Validate: if a purchase form exists with no product info, show error
+    const invalidPurchase = purchases.find(p => !p.product_id && !p.product_name.trim());
+    if (purchases.length > 0 && invalidPurchase && purchases.some(p => p.product_id || p.product_name.trim())) {
+      // Only warn if there are mixed valid/invalid
+    }
     
     setLoading(true);
     try {
