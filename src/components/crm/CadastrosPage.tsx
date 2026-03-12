@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import ClienteModal from "./ClienteModal";
 import PetModal from "./PetModal";
 import ProdutoModal from "./ProdutoModal";
+import WizardCadastroModal from "./WizardCadastroModal";
+import { startNewPurchaseCycle } from "@/lib/crm-data";
 
 const CadastrosPage = () => {
   const [activeTab, setActiveTab] = useState("clientes");
@@ -33,6 +35,9 @@ const CadastrosPage = () => {
   const [produtoModalOpen, setProdutoModalOpen] = useState(false);
   const [editingProduto, setEditingProduto] = useState<Product | null>(null);
 
+  // Modal state - Wizard
+  const [wizardModalOpen, setWizardModalOpen] = useState(false);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
@@ -44,9 +49,9 @@ const CadastrosPage = () => {
       setCustomers(c);
       setPets(p);
       setProducts(prod);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading cadastros:", error);
-      toast.error("Erro ao carregar dados.");
+      toast.error(`Erro ao carregar dados: ${error?.message || "Erro desconhecido"}`);
     } finally {
       setLoading(false);
     }
@@ -146,6 +151,41 @@ const CadastrosPage = () => {
     }
   };
 
+  const handleSaveCadastroCompleto = async (
+    tutor: Omit<Customer, 'id'>, 
+    petsList: Omit<Pet, 'id'>[], 
+    purchasesList: {petIndex: number, product_id: string, data_compra: string}[]
+  ) => {
+    try {
+      // 1. Salvar Tutor
+      const newCustomer = await addCustomer(tutor);
+      if (!newCustomer || !newCustomer.id) throw new Error("Falha ao criar tutor");
+
+      // 2. Salvar Pets
+      const createdPets: Pet[] = [];
+      for (const p of petsList) {
+        if (!p.nome.trim()) continue;
+        const savedPet = await addPet({ ...p, customer_id: newCustomer.id });
+        if (savedPet) createdPets.push(savedPet);
+      }
+
+      // 3. Salvar Compras (Registrar primeira recompra se houver produto vinculado)
+      for (const purchase of purchasesList) {
+        if (!purchase.product_id) continue;
+        
+        const targetPet = createdPets[purchase.petIndex];
+        if (!targetPet) continue;
+
+        await startNewPurchaseCycle(targetPet.id, purchase.product_id, purchase.data_compra);
+      }
+
+      loadData();
+    } catch (err: any) {
+      console.error("Save Completo error:", err);
+      throw err;
+    }
+  };
+
   const getCustomerName = (id: string) => customers.find(c => c.id === id)?.nome || "Desconhecido";
 
   if (loading && customers.length === 0) {
@@ -182,10 +222,10 @@ const CadastrosPage = () => {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-semibold text-foreground">Lista de Clientes</h2>
               <button 
-                onClick={() => { setEditingCliente(null); setClienteModalOpen(true); }}
+                onClick={() => setWizardModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
               >
-                <Plus size={16} /> Adicionar Cliente
+                <Plus size={16} /> Novo Cadastro Completo
               </button>
             </div>
             
@@ -327,6 +367,13 @@ const CadastrosPage = () => {
         onClose={() => setProdutoModalOpen(false)} 
         onSave={handleSaveProduto}
         editingProduct={editingProduto}
+      />
+
+      <WizardCadastroModal
+        open={wizardModalOpen}
+        onClose={() => setWizardModalOpen(false)}
+        products={products}
+        onSaveCompleto={handleSaveCadastroCompleto}
       />
     </div>
   );

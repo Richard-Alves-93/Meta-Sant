@@ -35,9 +35,9 @@ const RecomprasPage = () => {
       // or we could fetch by status if dataset gets huge.
       const data = await fetchPurchases();
       setPurchases(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading recompras:", error);
-      toast.error("Erro ao carregar recompras.");
+      toast.error(`Erro ao carregar recompras: ${error?.message || "Erro desconhecido"}`);
     } finally {
       setLoading(false);
     }
