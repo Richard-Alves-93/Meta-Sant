@@ -110,7 +110,7 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
   };
 
   const addPurchaseForm = () => {
-    setPurchases([...purchases, { petIndex: 0, product_id: '', data_compra: format(new Date(), 'yyyy-MM-dd') }]);
+    setPurchases([...purchases, { petIndex: 0, product_id: '', product_name: '', data_compra: format(new Date(), 'yyyy-MM-dd') }]);
   };
 
   const removePurchaseForm = (index: number) => {
