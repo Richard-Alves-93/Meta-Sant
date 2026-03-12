@@ -5,7 +5,8 @@ import {
   Customer, Pet, Product,
   fetchCustomers, addCustomer, updateCustomer, deleteCustomer,
   fetchPets, addPet, updatePet, deletePet,
-  fetchProducts, addProduct, updateProduct, deleteProduct
+  fetchProducts, addProduct, updateProduct, deleteProduct,
+  findOrCreateProduct
 } from "@/lib/crm-data";
 import { toast } from "sonner";
 import ClienteModal from "./ClienteModal";
