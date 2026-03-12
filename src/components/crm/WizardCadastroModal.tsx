@@ -45,7 +45,7 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
     setStep(1);
     setTutor({ nome: '', telefone: '', whatsapp: '', email: '', observacoes: '' });
     setPets([{ nome: '', especie: '', raca: '', data_aniversario: '', sexo: '', porte: '', peso: '' }]);
-    setPurchases([{ petIndex: 0, product_id: '', data_compra: format(new Date(), 'yyyy-MM-dd') }]);
+    setPurchases([{ petIndex: 0, product_id: '', product_name: '', data_compra: format(new Date(), 'yyyy-MM-dd') }]);
   };
 
   const handleClose = () => {
