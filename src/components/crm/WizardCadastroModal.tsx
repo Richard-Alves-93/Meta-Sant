@@ -354,12 +354,9 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
               </div>
             ))}
 
-            <Button type="button" variant="outline" onClick={addPurchaseForm} className="w-full border-dashed" disabled={products.length === 0}>
+            <Button type="button" variant="outline" onClick={addPurchaseForm} className="w-full border-dashed">
               <Plus size={16} className="mr-2" /> Adicionar outra compra para este Tutor
             </Button>
-            {products.length === 0 && (
-              <p className="text-xs text-amber-600 mt-2 text-center">Cadastre produtos na aba Produtos primeiro.</p>
-            )}
           </div>
         </div>
 
