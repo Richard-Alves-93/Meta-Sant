@@ -324,25 +324,18 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Produto</Label>
-                    <Select 
-                      value={purchase.product_id} 
-                      onValueChange={(val) => {
+                    <Label>Produto *</Label>
+                    <ProductCombobox
+                      products={products}
+                      selectedProductId={purchase.product_id}
+                      productName={purchase.product_name}
+                      onSelect={(productId, productName) => {
                         const newP = [...purchases];
-                        newP[index].product_id = val;
+                        newP[index].product_id = productId;
+                        newP[index].product_name = productName;
                         setPurchases(newP);
                       }}
-                    >
-                      <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
-                      <SelectContent>
-                        {products.map(p => (
-                          <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
-                        ))}
-                        {products.length === 0 && (
-                          <SelectItem value="none" disabled>Nenhum produto cadastrado no sistema</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
 
                   <div className="space-y-2 sm:col-span-2">
