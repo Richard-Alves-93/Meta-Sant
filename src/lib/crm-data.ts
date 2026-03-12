@@ -589,16 +589,42 @@ export async function saveWorkSettings(workMode: WorkMode, customSchedule?: Reco
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  const { error } = await supabase.from('work_settings').upsert({
-    user_id: user.id,
-    work_mode: workMode,
-    custom_schedule_json: customSchedule || null,
-    updated_at: new Date().toISOString(),
-  }, {
-    onConflict: 'user_id',
-  });
+  try {
+    // First try to update existing settings
+    const { data: existing, error: fetchError } = await supabase
+      .from('work_settings')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
 
-  if (error) throw error;
+    if (!fetchError && existing) {
+      // Update existing record
+      const { error: updateError } = await supabase
+        .from('work_settings')
+        .update({
+          work_mode: workMode,
+          custom_schedule_json: customSchedule || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+    } else {
+      // Insert new record
+      const { error: insertError } = await supabase
+        .from('work_settings')
+        .insert({
+          user_id: user.id,
+          work_mode: workMode,
+          custom_schedule_json: customSchedule || null,
+        });
+
+      if (insertError) throw insertError;
+    }
+  } catch (error) {
+    console.error('Error saving work settings:', error);
+    throw error;
+  }
 }
 
 export async function addCustomHoliday(data: string, descricao?: string) {

@@ -153,14 +153,14 @@ const CadastrosPage = () => {
   };
 
   const handleSaveCadastroCompleto = async (
-    tutor: Omit<Customer, 'id'>, 
+    tutor: Omit<Customer, 'id'>,
     petsList: Omit<Pet, 'id' | 'customer_id'>[],
-    purchasesList: {petIndex: number, product_id: string, product_name: string, data_compra: string}[]
+    purchasesList: {petIndex: number, product_id: string, product_name: string, prazo_recompra: number, data_compra: string}[]
   ) => {
     try {
       // 1. Salvar Tutor
       const newCustomer = await addCustomer(tutor);
-      if (!newCustomer || !newCustomer.id) throw new Error("Falha ao criar tutor");
+      if (!newCustomer || !newCustomer.id) throw new Error("Tutor não foi criado corretamente");
 
       // 2. Salvar Pets
       const createdPets: Pet[] = [];
@@ -173,24 +173,31 @@ const CadastrosPage = () => {
       // 3. Salvar Compras (Registrar primeira recompra se houver produto vinculado)
       for (const purchase of purchasesList) {
         if (!purchase.product_id && !purchase.product_name.trim()) continue;
-        
+
         const targetPet = createdPets[purchase.petIndex];
-        if (!targetPet) continue;
+        if (!targetPet) throw new Error(`Pet inválido para compra recorrente`);
+
+        // Validar prazo de recompra
+        if (!purchase.prazo_recompra || purchase.prazo_recompra < 1) {
+          throw new Error("Prazo de recompra deve ser um número válido na compra recorrente");
+        }
 
         // Resolve product_id: use existing or create new
         let productId = purchase.product_id;
         if (!productId && purchase.product_name.trim()) {
           const product = await findOrCreateProduct(purchase.product_name.trim());
+          if (!product || !product.id) throw new Error("Falha ao criar produto automaticamente");
           productId = product.id;
         }
 
-        await startNewPurchaseCycle(targetPet.id, productId, purchase.data_compra);
+        // Salvar ciclo de compra com prazo_recompra explícito
+        await startNewPurchaseCycle(targetPet.id, productId, purchase.data_compra, purchase.prazo_recompra);
       }
 
       loadData();
     } catch (err: any) {
-      console.error("Save Completo error:", err);
-      throw err;
+      console.error("Erro ao salvar cadastro completo:", err);
+      throw new Error(err.message || "Erro desconhecido ao salvar cadastro");
     }
   };
 

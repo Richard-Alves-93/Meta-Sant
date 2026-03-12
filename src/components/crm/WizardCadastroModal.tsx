@@ -38,6 +38,7 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
     petIndex: 0,
     product_id: '',
     product_name: '',
+    prazo_recompra: 30,
     data_compra: format(new Date(), 'yyyy-MM-dd')
   }]);
 
@@ -45,7 +46,7 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
     setStep(1);
     setTutor({ nome: '', telefone: '', whatsapp: '', email: '', observacoes: '' });
     setPets([{ nome: '', especie: '', raca: '', data_aniversario: '', sexo: '', porte: '', peso: '' }]);
-    setPurchases([{ petIndex: 0, product_id: '', product_name: '', data_compra: format(new Date(), 'yyyy-MM-dd') }]);
+    setPurchases([{ petIndex: 0, product_id: '', product_name: '', prazo_recompra: 30, data_compra: format(new Date(), 'yyyy-MM-dd') }]);
   };
 
   const handleClose = () => {
@@ -74,22 +75,58 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
 
   const handleSave = async () => {
     if (loading) return;
+
+    // Validações básicas
+    if (!tutor.nome.trim()) {
+      toast.error("Nome do tutor é obrigatório");
+      return;
+    }
+
+    const emptyPet = pets.find(p => !p.nome.trim());
+    if (emptyPet) {
+      toast.error("Todos os pets devem ter nome preenchido");
+      return;
+    }
+
     // Filter out purchases without product info
     const validPurchases = purchases.filter(p => p.product_id || p.product_name.trim());
-    
-    // Validate: if a purchase form exists with no product info, show error
-    const invalidPurchase = purchases.find(p => !p.product_id && !p.product_name.trim());
-    if (purchases.length > 0 && invalidPurchase && purchases.some(p => p.product_id || p.product_name.trim())) {
-      // Only warn if there are mixed valid/invalid
+
+    // Validar cada compra válida
+    for (const purchase of validPurchases) {
+      if (!purchase.prazo_recompra || purchase.prazo_recompra < 1) {
+        toast.error("Prazo de recompra deve ser um número válido (mínimo 1 dia)");
+        return;
+      }
+      if (!purchase.data_compra) {
+        toast.error("Data da compra é obrigatória");
+        return;
+      }
     }
-    
+
     setLoading(true);
     try {
-      await onSaveCompleto(tutor, pets.map(p => ({ ...p, peso: p.peso ? Number(p.peso) : null })) as Omit<Pet, 'id' | 'customer_id'>[], validPurchases);
+      await onSaveCompleto(
+        tutor,
+        pets.map(p => ({ ...p, peso: p.peso ? Number(p.peso) : null })) as Omit<Pet, 'id' | 'customer_id'>[],
+        validPurchases
+      );
       toast.success("Cadastro completo realizado com sucesso!");
       handleClose();
-    } catch (err) {
-      toast.error("Ocorreu um erro ao salvar o cadastro completo.");
+    } catch (err: any) {
+      console.error("Erro ao salvar cadastro completo:", err);
+
+      // Mensagens de erro específicas
+      if (err.message?.includes("tutor")) {
+        toast.error("Erro ao salvar dados do tutor");
+      } else if (err.message?.includes("pet")) {
+        toast.error("Erro ao salvar dados do pet");
+      } else if (err.message?.includes("produto")) {
+        toast.error("Erro ao criar/encontrar produto");
+      } else if (err.message?.includes("compra")) {
+        toast.error("Erro ao salvar compra recorrente");
+      } else {
+        toast.error("Ocorreu um erro ao salvar o cadastro completo. Verifique o console para mais detalhes.");
+      }
     } finally {
       setLoading(false);
     }
@@ -110,7 +147,7 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
   };
 
   const addPurchaseForm = () => {
-    setPurchases([...purchases, { petIndex: 0, product_id: '', product_name: '', data_compra: format(new Date(), 'yyyy-MM-dd') }]);
+    setPurchases([...purchases, { petIndex: 0, product_id: '', product_name: '', prazo_recompra: 30, data_compra: format(new Date(), 'yyyy-MM-dd') }]);
   };
 
   const removePurchaseForm = (index: number) => {
@@ -333,6 +370,13 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
                         const newP = [...purchases];
                         newP[index].product_id = productId;
                         newP[index].product_name = productName;
+
+                        // Auto-fill prazo_recompra from product default
+                        const selectedProduct = products.find(p => p.id === productId);
+                        if (selectedProduct && selectedProduct.prazo_recompra_dias) {
+                          newP[index].prazo_recompra = selectedProduct.prazo_recompra_dias;
+                        }
+
                         setPurchases(newP);
                       }}
                     />
@@ -340,15 +384,31 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
 
                   <div className="space-y-2 sm:col-span-2">
                     <Label>Data da Compra</Label>
-                    <Input 
-                      type="date" 
-                      value={purchase.data_compra} 
+                    <Input
+                      type="date"
+                      value={purchase.data_compra}
                       onChange={e => {
                         const newP = [...purchases];
                         newP[index].data_compra = e.target.value;
                         setPurchases(newP);
-                      }} 
+                      }}
                     />
+                  </div>
+
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label>Prazo de recompra (dias) *</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={purchase.prazo_recompra}
+                      onChange={e => {
+                        const newP = [...purchases];
+                        newP[index].prazo_recompra = parseInt(e.target.value) || 30;
+                        setPurchases(newP);
+                      }}
+                      placeholder="Informe em quantos dias esse produto normalmente precisa ser renovado"
+                    />
+                    <p className="text-xs text-muted-foreground">Ex: 30=mensal, 90=trimestral, 365=anual</p>
                   </div>
                 </div>
               </div>
