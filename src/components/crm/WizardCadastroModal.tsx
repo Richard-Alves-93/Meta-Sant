@@ -37,6 +37,7 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
   const [purchases, setPurchases] = useState([{
     petIndex: 0,
     product_id: '',
+    product_name: '',
     data_compra: format(new Date(), 'yyyy-MM-dd')
   }]);
 
