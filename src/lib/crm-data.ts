@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { withErrorHandler, normalizeError, handleSupabaseError, validateCanDelete, executeSequential, CrmError } from "@/services/errorHandler";
+import { formatDateBR, formatISODate, parseLocalDate, dateWithoutTime } from "@/utils/date";
 
 export interface Meta {
   id: string;
@@ -135,6 +137,41 @@ export function getDiasMes(): number {
   return new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
 }
 
+// ---- Authentication Wrapper (P6) ----
+
+/**
+ * Wrapper for Supabase auth.getUser() with automatic logout on 401
+ * Centralizes all authentication checks and handles expired sessions
+ */
+export async function getAuthUser() {
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  // Handle 401 Unauthorized - session expired
+  if (error?.status === 401 || !user) {
+    console.error('[CRM] Auth error - logging out', error);
+
+    // Sign out and redirect to login
+    await supabase.auth.signOut().catch(err =>
+      console.error('[CRM] Logout error:', err)
+    );
+
+    // Redirect to login page
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+
+    throw new CrmError(
+      'Authentication failed - session expired',
+      'AUTH_FAILED',
+      401,
+      'Sua sessão expirou. Faça login novamente.',
+      { originalError: error }
+    );
+  }
+
+  return user;
+}
+
 // ---- Supabase data layer ----
 
 export async function fetchDatabase(): Promise<CrmDatabase> {
@@ -162,22 +199,36 @@ export async function fetchDatabase(): Promise<CrmDatabase> {
 }
 
 export async function addMeta(nome: string, valor: number, descricao: string) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  const user = await getAuthUser();
   await supabase.from('metas').insert({ user_id: user.id, nome, valor, descricao });
 }
 
 export async function updateMeta(id: string, nome: string, valor: number, descricao: string) {
-  await supabase.from('metas').update({ nome, valor, descricao }).eq('id', id);
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('metas').update({ nome, valor, descricao }).eq('id', id);
+      if (error) throw handleSupabaseError(error, 'updateMeta');
+    },
+    'updateMeta',
+    undefined,
+    { metaId: id }
+  );
 }
 
 export async function deleteMeta(id: string) {
-  await supabase.from('metas').delete().eq('id', id);
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('metas').delete().eq('id', id);
+      if (error) throw handleSupabaseError(error, 'deleteMeta');
+    },
+    'deleteMeta',
+    undefined,
+    { metaId: id }
+  );
 }
 
 export async function addLancamento(data: string, valorBruto: number, desconto: number) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  const user = await getAuthUser();
   await supabase.from('lancamentos').insert({
     user_id: user.id,
     data,
@@ -187,15 +238,31 @@ export async function addLancamento(data: string, valorBruto: number, desconto: 
 }
 
 export async function updateLancamento(id: string, data: string, valorBruto: number, desconto: number) {
-  await supabase.from('lancamentos').update({
-    data,
-    valor_bruto: valorBruto,
-    desconto,
-  }).eq('id', id);
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('lancamentos').update({
+        data,
+        valor_bruto: valorBruto,
+        desconto,
+      }).eq('id', id);
+      if (error) throw handleSupabaseError(error, 'updateLancamento');
+    },
+    'updateLancamento',
+    undefined,
+    { lancamentoId: id }
+  );
 }
 
 export async function deleteLancamento(id: string) {
-  await supabase.from('lancamentos').delete().eq('id', id);
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('lancamentos').delete().eq('id', id);
+      if (error) throw handleSupabaseError(error, 'deleteLancamento');
+    },
+    'deleteLancamento',
+    undefined,
+    { lancamentoId: id }
+  );
 }
 
 export async function exportarDadosJSON() {
@@ -256,19 +323,49 @@ export async function fetchCustomers(): Promise<Customer[]> {
 }
 
 export async function addCustomer(customer: Omit<Customer, 'id'>): Promise<Customer> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  const user = await getAuthUser();
   const { data, error } = await supabase.from('customers').insert({ ...customer, user_id: user.id } as any).select().single();
-  if (error) throw error;
+  if (error) throw handleSupabaseError(error, 'addCustomer');
   return data as Customer;
 }
 
 export async function updateCustomer(id: string, customer: Partial<Omit<Customer, 'id'>>) {
-  await supabase.from('customers').update(customer).eq('id', id);
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('customers').update(customer).eq('id', id);
+      if (error) throw handleSupabaseError(error, 'updateCustomer');
+    },
+    'updateCustomer',
+    undefined,
+    { customerId: id }
+  );
 }
 
 export async function deleteCustomer(id: string) {
-  await supabase.from('customers').delete().eq('id', id);
+  // P3: Validate cascade - ensure no pets exist for this customer
+  await validateCanDelete(
+    'customers',
+    id,
+    async () => {
+      const { count, error } = await supabase
+        .from('pets')
+        .select('*', { count: 'exact', head: true })
+        .eq('customer_id', id);
+      if (error) throw error;
+      return count || 0;
+    }
+  );
+
+  // If validation passes, proceed with deletion
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('customers').delete().eq('id', id);
+      if (error) throw handleSupabaseError(error, 'deleteCustomer');
+    },
+    'deleteCustomer',
+    undefined,
+    { customerId: id }
+  );
 }
 
 // Pets
@@ -285,8 +382,7 @@ export async function fetchPetsByCustomer(customerId: string): Promise<Pet[]> {
 }
 
 export async function addPet(pet: Omit<Pet, 'id'>): Promise<Pet> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  const user = await getAuthUser();
 
   // Sanitize date fields: convert empty strings to null
   const sanitizedPet = {
@@ -296,7 +392,7 @@ export async function addPet(pet: Omit<Pet, 'id'>): Promise<Pet> {
   };
 
   const { data, error } = await supabase.from('pets').insert(sanitizedPet as any).select().single();
-  if (error) throw error;
+  if (error) throw handleSupabaseError(error, 'addPet');
   return data as Pet;
 }
 
@@ -306,11 +402,43 @@ export async function updatePet(id: string, pet: Partial<Omit<Pet, 'id'>>) {
     ...pet,
     data_aniversario: pet.data_aniversario?.trim() ? pet.data_aniversario : null
   };
-  await supabase.from('pets').update(sanitizedPet).eq('id', id);
+
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('pets').update(sanitizedPet).eq('id', id);
+      if (error) throw handleSupabaseError(error, 'updatePet');
+    },
+    'updatePet',
+    undefined,
+    { petId: id }
+  );
 }
 
 export async function deletePet(id: string) {
-  await supabase.from('pets').delete().eq('id', id);
+  // P3: Validate cascade - ensure no purchase records exist for this pet
+  await validateCanDelete(
+    'pets',
+    id,
+    async () => {
+      const { count, error } = await supabase
+        .from('pet_purchases')
+        .select('*', { count: 'exact', head: true })
+        .eq('pet_id', id);
+      if (error) throw error;
+      return count || 0;
+    }
+  );
+
+  // If validation passes, proceed with deletion
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('pets').delete().eq('id', id);
+      if (error) throw handleSupabaseError(error, 'deletePet');
+    },
+    'deletePet',
+    undefined,
+    { petId: id }
+  );
 }
 
 // Products
@@ -321,10 +449,9 @@ export async function fetchProducts(): Promise<Product[]> {
 }
 
 export async function addProduct(product: Omit<Product, 'id'>): Promise<Product> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  const user = await getAuthUser();
   const { data, error } = await supabase.from('products').insert({ ...product, user_id: user.id } as any).select().single();
-  if (error) throw error;
+  if (error) throw handleSupabaseError(error, 'addProduct');
   return data as Product;
 }
 
@@ -355,11 +482,27 @@ export async function findOrCreateProduct(productName: string): Promise<Product>
 }
 
 export async function updateProduct(id: string, product: Partial<Omit<Product, 'id'>>) {
-  await supabase.from('products').update(product).eq('id', id);
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('products').update(product).eq('id', id);
+      if (error) throw handleSupabaseError(error, 'updateProduct');
+    },
+    'updateProduct',
+    undefined,
+    { productId: id }
+  );
 }
 
 export async function deleteProduct(id: string) {
-  await supabase.from('products').delete().eq('id', id);
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) throw handleSupabaseError(error, 'deleteProduct');
+    },
+    'deleteProduct',
+    undefined,
+    { productId: id }
+  );
 }
 
 // Pet Purchases (Recompras)
@@ -377,9 +520,8 @@ export async function fetchPetPurchases(): Promise<PetPurchase[]> {
 }
 
 export async function addPetPurchase(purchase: Omit<PetPurchase, 'id' | 'pet' | 'product'>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-  
+  const user = await getAuthUser();
+
   // Calculate reminder date if not provided
   let data_lembrete = purchase.data_lembrete;
   if (!data_lembrete && purchase.proxima_data && purchase.dias_aviso_previo) {
@@ -388,15 +530,32 @@ export async function addPetPurchase(purchase: Omit<PetPurchase, 'id' | 'pet' | 
     data_lembrete = prox.toISOString().split('T')[0];
   }
 
-  await supabase.from('pet_purchases').insert({ ...purchase, data_lembrete, user_id: user.id });
+  const { error } = await supabase.from('pet_purchases').insert({ ...purchase, data_lembrete, user_id: user.id });
+  if (error) throw handleSupabaseError(error, 'addPetPurchase');
 }
 
 export async function updatePetPurchase(id: string, purchase: Partial<Omit<PetPurchase, 'id' | 'pet' | 'product'>>) {
-  await supabase.from('pet_purchases').update(purchase).eq('id', id);
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('pet_purchases').update(purchase).eq('id', id);
+      if (error) throw handleSupabaseError(error, 'updatePetPurchase');
+    },
+    'updatePetPurchase',
+    undefined,
+    { purchaseId: id }
+  );
 }
 
 export async function deletePetPurchase(id: string) {
-  await supabase.from('pet_purchases').delete().eq('id', id);
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('pet_purchases').delete().eq('id', id);
+      if (error) throw handleSupabaseError(error, 'deletePetPurchase');
+    },
+    'deletePetPurchase',
+    undefined,
+    { purchaseId: id }
+  );
 }
 
 export async function fetchPurchases(filters?: { status?: PetPurchaseStatus }): Promise<(PetPurchase & { customer?: Customer, pet?: Pet, product?: Product })[]> {
@@ -424,83 +583,160 @@ export async function fetchPurchases(filters?: { status?: PetPurchaseStatus }): 
 }
 
 export async function updatePurchaseStatus(purchaseId: string, status: PetPurchaseStatus) {
-  await supabase.from('pet_purchases').update({ status }).eq('id', purchaseId);
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('pet_purchases').update({ status }).eq('id', purchaseId);
+      if (error) throw handleSupabaseError(error, 'updatePurchaseStatus');
+    },
+    'updatePurchaseStatus',
+    undefined,
+    { purchaseId, status }
+  );
 }
 
 export async function registerWhatsAppLog(purchaseId: string, telefone: string, mensagem: string) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-  
-  await supabase.from('whatsapp_logs').insert({
+  const user = await getAuthUser();
+
+  const { error } = await supabase.from('whatsapp_logs').insert({
     user_id: user.id,
     purchase_id: purchaseId,
     telefone,
     mensagem
   });
-  
+
+  if (error) throw handleSupabaseError(error, 'registerWhatsAppLog');
+
   // Update purchase status
   await updatePurchaseStatus(purchaseId, 'Notificado');
 }
 
 export async function registerRepurchase(purchaseId: string, newProductId: string, dataCompraStr: string) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  const user = await getAuthUser();
 
-  // 1. Fetch current purchase
-  const { data: currentPurchase, error: fetchErr } = await supabase
-    .from('pet_purchases')
-    .select('*')
-    .eq('id', purchaseId)
-    .single();
+  // P2: Implementation of atomic transaction pattern with rollback
+  // Uses executeSequential to handle multi-step operation with rollback capability
+  interface StepResults {
+    currentPurchase?: any;
+    newProduct?: any;
+    isTrocado?: boolean;
+    proximaData?: Date;
+    dataLembrete?: Date;
+  }
 
-  if (fetchErr || !currentPurchase) throw new Error('Purchase not found');
+  const stepResults: StepResults = {};
 
-  // 2. Fetch new product to get deadlines
-  const { data: newProduct, error: prodErr } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', newProductId)
-    .single();
+  await executeSequential([
+    {
+      name: 'Fetch current purchase',
+      operation: async () => {
+        const { data, error } = await supabase
+          .from('pet_purchases')
+          .select('*')
+          .eq('id', purchaseId)
+          .single();
 
-  if (prodErr || !newProduct) throw new Error('Product not found');
+        if (error || !data) {
+          throw handleSupabaseError(error || new Error('Purchase not found'), 'registerRepurchase - fetch current');
+        }
 
-  // 3. Mark current as "Recompra registrada" or "Trocado"
-  const isTrocado = currentPurchase.product_id !== newProductId;
-  await supabase
-    .from('pet_purchases')
-    .update({ status: isTrocado ? 'Trocado' : 'Recompra registrada' })
-    .eq('id', purchaseId);
+        stepResults.currentPurchase = data;
+        return data;
+      }
+    },
+    {
+      name: 'Fetch new product',
+      operation: async () => {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', newProductId)
+          .single();
 
-  // 4. Calculate new dates
-  const dataCompra = new Date(dataCompraStr);
-  const proximaData = new Date(dataCompra);
-  proximaData.setDate(proximaData.getDate() + newProduct.prazo_recompra_dias);
-  
-  const dataLembrete = new Date(proximaData);
-  dataLembrete.setDate(dataLembrete.getDate() - newProduct.dias_aviso_previo);
+        if (error || !data) {
+          throw handleSupabaseError(error || new Error('Product not found'), 'registerRepurchase - fetch product');
+        }
 
-  // 5. Insert new cycle linked to old one
-  await supabase.from('pet_purchases').insert({
-    user_id: user.id,
-    pet_id: currentPurchase.pet_id,
-    product_id: newProductId,
-    data_compra: dataCompraStr,
-    dias_recompra: newProduct.prazo_recompra_dias,
-    proxima_data: proximaData.toISOString().split('T')[0],
-    dias_aviso_previo: newProduct.dias_aviso_previo,
-    data_lembrete: dataLembrete.toISOString().split('T')[0],
-    status: 'Ativo',
-    purchase_history_id: currentPurchase.id // Link to previous cycle
-  });
+        stepResults.newProduct = data;
+        return data;
+      }
+    },
+    {
+      name: 'Update current purchase status',
+      operation: async () => {
+        const isTrocado = stepResults.currentPurchase!.product_id !== newProductId;
+        stepResults.isTrocado = isTrocado;
+
+        const { error } = await supabase
+          .from('pet_purchases')
+          .update({ status: isTrocado ? 'Trocado' : 'Recompra registrada' })
+          .eq('id', purchaseId);
+
+        if (error) {
+          throw handleSupabaseError(error, 'registerRepurchase - update status');
+        }
+      },
+      rollback: async () => {
+        // Revert status back to 'Ativo'
+        await supabase
+          .from('pet_purchases')
+          .update({ status: 'Ativo' })
+          .eq('id', purchaseId)
+          .catch(err => console.error('[CRM] Rollback error on status revert:', err));
+      }
+    },
+    {
+      name: 'Insert new purchase cycle',
+      operation: async () => {
+        const dataCompra = new Date(dataCompraStr);
+        const proximaData = new Date(dataCompra);
+        proximaData.setDate(proximaData.getDate() + stepResults.newProduct!.prazo_recompra_dias);
+
+        const dataLembrete = new Date(proximaData);
+        dataLembrete.setDate(dataLembrete.getDate() - stepResults.newProduct!.dias_aviso_previo);
+
+        stepResults.proximaData = proximaData;
+        stepResults.dataLembrete = dataLembrete;
+
+        const { data, error } = await supabase
+          .from('pet_purchases')
+          .insert({
+            user_id: user.id,
+            pet_id: stepResults.currentPurchase!.pet_id,
+            product_id: newProductId,
+            data_compra: dataCompraStr,
+            dias_recompra: stepResults.newProduct!.prazo_recompra_dias,
+            proxima_data: proximaData.toISOString().split('T')[0],
+            dias_aviso_previo: stepResults.newProduct!.dias_aviso_previo,
+            data_lembrete: dataLembrete.toISOString().split('T')[0],
+            status: 'Ativo',
+            purchase_history_id: purchaseId
+          })
+          .select()
+          .single();
+
+        if (error) {
+          throw handleSupabaseError(error, 'registerRepurchase - insert new cycle');
+        }
+
+        return data;
+      }
+      // Note: No rollback for insert - parent executeSequential will handle cleanup
+    }
+  ]);
 }
 
 export async function startNewPurchaseCycle(petId: string, productId: string, dataCompraStr: string, diasRecompra?: number) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  const user = await getAuthUser();
 
   // Validate data_compra is not empty
   if (!dataCompraStr || !dataCompraStr.trim()) {
-    throw new Error('Data da compra é obrigatória e não pode estar vazia');
+    throw new CrmError(
+      'Data da compra é obrigatória e não pode estar vazia',
+      'VALIDATION_ERROR',
+      400,
+      'Data da compra é obrigatória',
+      { petId, productId }
+    );
   }
 
   const { data: product, error: prodErr } = await supabase
@@ -509,7 +745,7 @@ export async function startNewPurchaseCycle(petId: string, productId: string, da
     .eq('id', productId)
     .single();
 
-  if (prodErr || !product) throw new Error('Product not found');
+  if (prodErr || !product) throw handleSupabaseError(prodErr || new Error('Product not found'), 'startNewPurchaseCycle - fetch product');
 
   // Use provided diasRecompra, fallback to product default
   const dias = diasRecompra || product.prazo_recompra_dias;
@@ -521,7 +757,7 @@ export async function startNewPurchaseCycle(petId: string, productId: string, da
   const dataLembrete = new Date(proximaData);
   dataLembrete.setDate(dataLembrete.getDate() - product.dias_aviso_previo);
 
-  await supabase.from('pet_purchases').insert({
+  const { error } = await supabase.from('pet_purchases').insert({
     user_id: user.id,
     pet_id: petId,
     product_id: productId,
@@ -533,6 +769,8 @@ export async function startNewPurchaseCycle(petId: string, productId: string, da
     status: 'Ativo',
     purchase_history_id: null
   });
+
+  if (error) throw handleSupabaseError(error, 'startNewPurchaseCycle - insert');
 }
 
 // ---- Work Settings Module ----
