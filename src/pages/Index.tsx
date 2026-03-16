@@ -3,7 +3,7 @@ import CrmSidebar, { CrmPage } from "@/components/crm/CrmSidebar";
 import DashboardPage from "@/components/crm/DashboardPage";
 import LancamentosPage from "@/components/crm/LancamentosPage";
 import MetasPage from "@/components/crm/MetasPage";
-import CadastrosPage from "@/components/crm/CadastrosPage";
+import CadastrosPage from "@/components/crm/cadastros";
 import RecomprasPage from "@/components/crm/RecomprasPage";
 import RelatoriosPage from "@/components/crm/RelatoriosPage";
 import ConfiguracoesPage from "@/components/crm/ConfiguracoesPage";
