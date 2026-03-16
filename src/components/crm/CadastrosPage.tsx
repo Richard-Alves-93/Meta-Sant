@@ -95,11 +95,12 @@ const CadastrosPage = () => {
   // ---- Handlers: Pets ----
   const handleSavePet = async (pet: Omit<Pet, 'id'>) => {
     try {
+      const sanitizedPet = sanitizePetData(pet);
       if (editingPet) {
-        await updatePet(editingPet.id, pet);
+        await updatePet(editingPet.id, sanitizedPet);
         toast.success("Pet atualizado!");
       } else {
-        await addPet(pet);
+        await addPet(sanitizedPet);
         toast.success("Pet adicionado!");
       }
       setPetModalOpen(false);
@@ -152,6 +153,13 @@ const CadastrosPage = () => {
     }
   };
 
+  // Helper: Converter strings vazias em null para campos de data
+  const sanitizePetData = (pet: Omit<Pet, 'id'>) => ({
+    ...pet,
+    data_aniversario: pet.data_aniversario?.trim() ? pet.data_aniversario : null,
+    peso: pet.peso ? Number(pet.peso) : null
+  });
+
   const handleSaveCadastroCompleto = async (
     tutor: Omit<Customer, 'id'>,
     petsList: Omit<Pet, 'id' | 'customer_id'>[],
@@ -181,7 +189,8 @@ const CadastrosPage = () => {
           continue;
         }
         console.log(`Salvando pet ${i + 1}/${petsList.length}:`, p.nome);
-        const savedPet = await addPet({ ...p, customer_id: newCustomer.id });
+        const sanitizedPet = sanitizePetData({ ...p, customer_id: newCustomer.id });
+        const savedPet = await addPet(sanitizedPet);
         if (savedPet && savedPet.id) {
           createdPets.push(savedPet);
           console.log(`✓ Pet "${p.nome}" criado com ID:`, savedPet.id);

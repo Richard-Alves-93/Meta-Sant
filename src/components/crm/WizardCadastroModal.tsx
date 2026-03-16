@@ -113,7 +113,11 @@ export default function WizardCadastroModal({ open, onClose, products, onSaveCom
       console.log("Enviando dados do cadastro completo para salvamento...");
       await onSaveCompleto(
         tutor,
-        pets.map(p => ({ ...p, peso: p.peso ? Number(p.peso) : null })) as Omit<Pet, 'id' | 'customer_id'>[],
+        pets.map(p => ({
+          ...p,
+          data_aniversario: p.data_aniversario?.trim() ? p.data_aniversario : null,
+          peso: p.peso ? Number(p.peso) : null
+        })) as Omit<Pet, 'id' | 'customer_id'>[],
         validPurchases
       );
       console.log("✓ Cadastro completo salvo com sucesso!");

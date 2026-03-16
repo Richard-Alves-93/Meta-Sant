@@ -287,13 +287,26 @@ export async function fetchPetsByCustomer(customerId: string): Promise<Pet[]> {
 export async function addPet(pet: Omit<Pet, 'id'>): Promise<Pet> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
-  const { data, error } = await supabase.from('pets').insert({ ...pet, user_id: user.id } as any).select().single();
+
+  // Sanitize date fields: convert empty strings to null
+  const sanitizedPet = {
+    ...pet,
+    data_aniversario: pet.data_aniversario?.trim() ? pet.data_aniversario : null,
+    user_id: user.id
+  };
+
+  const { data, error } = await supabase.from('pets').insert(sanitizedPet as any).select().single();
   if (error) throw error;
   return data as Pet;
 }
 
 export async function updatePet(id: string, pet: Partial<Omit<Pet, 'id'>>) {
-  await supabase.from('pets').update(pet).eq('id', id);
+  // Sanitize date fields: convert empty strings to null
+  const sanitizedPet = {
+    ...pet,
+    data_aniversario: pet.data_aniversario?.trim() ? pet.data_aniversario : null
+  };
+  await supabase.from('pets').update(sanitizedPet).eq('id', id);
 }
 
 export async function deletePet(id: string) {
@@ -484,6 +497,11 @@ export async function registerRepurchase(purchaseId: string, newProductId: strin
 export async function startNewPurchaseCycle(petId: string, productId: string, dataCompraStr: string, diasRecompra?: number) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
+
+  // Validate data_compra is not empty
+  if (!dataCompraStr || !dataCompraStr.trim()) {
+    throw new Error('Data da compra é obrigatória e não pode estar vazia');
+  }
 
   const { data: product, error: prodErr } = await supabase
     .from('products')

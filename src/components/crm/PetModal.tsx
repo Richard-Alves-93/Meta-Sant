@@ -54,12 +54,12 @@ const PetModal = ({ open, onClose, onSave, editingPet, customers }: PetModalProp
       await onSave({
         nome,
         customer_id: customerId,
-        especie: especie || null,
-        raca: raca || null,
-        data_aniversario: dataAniversario || null,
-        sexo: sexo || null,
-        porte: porte || null,
-        peso: peso ? parseFloat(peso) : null,
+        especie: especie?.trim() ? especie : null,
+        raca: raca?.trim() ? raca : null,
+        data_aniversario: dataAniversario?.trim() ? dataAniversario : null,
+        sexo: sexo?.trim() ? sexo : null,
+        porte: porte?.trim() ? porte : null,
+        peso: peso && !isNaN(parseFloat(peso)) ? parseFloat(peso) : null,
       });
     } finally {
       setLoading(false);
