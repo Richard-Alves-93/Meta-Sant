@@ -1,12 +1,7 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, lazy } from "react";
 import CrmSidebar, { CrmPage } from "@/components/crm/CrmSidebar";
+import { PageSuspense } from "@/components/common/PageSuspense";
 import DashboardPage from "@/components/crm/DashboardPage";
-import LancamentosPage from "@/components/crm/LancamentosPage";
-import MetasPage from "@/components/crm/MetasPage";
-import CadastrosPage from "@/components/crm/cadastros";
-import RecomprasPage from "@/components/crm/RecomprasPage";
-import RelatoriosPage from "@/components/crm/RelatoriosPage";
-import ConfiguracoesPage from "@/components/crm/ConfiguracoesPage";
 import MetaModal from "@/components/crm/MetaModal";
 import LancamentoModal from "@/components/crm/LancamentoModal";
 import {
@@ -20,6 +15,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { LogOut, Menu } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+
+// ETAPA 10: Lazy-loaded pages for code splitting
+// DashboardPage remains eager (critical path)
+// Other pages lazy-load on demand
+const LancamentosPage = lazy(() => import("@/components/crm/LancamentosPage"));
+const MetasPage = lazy(() => import("@/components/crm/MetasPage"));
+const CadastrosPage = lazy(() => import("@/components/crm/cadastros"));
+const RecomprasPage = lazy(() => import("@/components/crm/RecomprasPage"));
+const RelatoriosPage = lazy(() => import("@/components/crm/RelatoriosPage"));
+const ConfiguracoesPage = lazy(() => import("@/components/crm/ConfiguracoesPage"));
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -151,29 +156,41 @@ const Index = () => {
         <div className="flex-1 p-4 md:p-8 overflow-x-hidden">
           {page === "dashboard" && (
             <DashboardPage db={db} onOpenLancamento={() => { setEditingLanc(null); setLancModalOpen(true); }}
-              onEditMeta={handleEditMeta} onDeleteMeta={handleDeleteMeta} 
+              onEditMeta={handleEditMeta} onDeleteMeta={handleDeleteMeta}
               onNavigateToRecompras={() => { setPage("recompras"); setIsSidebarOpen(false); }} />
           )}
           {page === "lancamentos" && (
-            <LancamentosPage db={db} onAdd={handleAddLancInline}
-              onEdit={handleEditLanc} onDelete={handleDeleteLanc}
-              onOpenModal={() => { setEditingLanc(null); setLancModalOpen(true); }} />
+            <PageSuspense>
+              <LancamentosPage db={db} onAdd={handleAddLancInline}
+                onEdit={handleEditLanc} onDelete={handleDeleteLanc}
+                onOpenModal={() => { setEditingLanc(null); setLancModalOpen(true); }} />
+            </PageSuspense>
           )}
           {page === "metas" && (
-            <MetasPage db={db} onAdd={() => { setEditingMeta(null); setMetaModalOpen(true); }}
-              onEdit={handleEditMeta} onDelete={handleDeleteMeta} />
+            <PageSuspense>
+              <MetasPage db={db} onAdd={() => { setEditingMeta(null); setMetaModalOpen(true); }}
+                onEdit={handleEditMeta} onDelete={handleDeleteMeta} />
+            </PageSuspense>
           )}
           {page === "cadastros" && (
-            <CadastrosPage />
+            <PageSuspense>
+              <CadastrosPage />
+            </PageSuspense>
           )}
           {page === "recompras" && (
-            <RecomprasPage />
+            <PageSuspense>
+              <RecomprasPage />
+            </PageSuspense>
           )}
           {page === "relatorios" && (
-            <RelatoriosPage db={db} onExportExcel={handleExportExcel} />
+            <PageSuspense>
+              <RelatoriosPage db={db} onExportExcel={handleExportExcel} />
+            </PageSuspense>
           )}
           {page === "configuracoes" && (
-            <ConfiguracoesPage db={db} onRefresh={refresh} customLogo={customLogo} onLogoChange={setCustomLogo} />
+            <PageSuspense>
+              <ConfiguracoesPage db={db} onRefresh={refresh} customLogo={customLogo} onLogoChange={setCustomLogo} />
+            </PageSuspense>
           )}
         </div>
 
