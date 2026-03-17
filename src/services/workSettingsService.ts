@@ -6,17 +6,57 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { WorkSettings, CustomHoliday, WorkMode } from "@/lib/types";
 
+export const defaultJornada = {
+  modo: "Segunda-sexta",
+  diasSelecionados: [1, 2, 3, 4, 5], // 1=Mon, 2=Tue... 5=Fri
+  usarFeriados: true // Padrao para calcular descontando feriados
+};
+
+export function carregarJornada() {
+  try {
+    const data = localStorage.getItem("jornada_trabalho");
+    if (!data) return defaultJornada;
+    
+    const parsed = JSON.parse(data);
+
+    return {
+      modo: parsed.modo || "Segunda-sexta",
+      diasSelecionados: Array.isArray(parsed.diasSelecionados)
+        ? parsed.diasSelecionados
+        : [1, 2, 3, 4, 5],
+      usarFeriados: parsed.usarFeriados !== undefined ? parsed.usarFeriados : true
+    };
+  } catch (error) {
+    console.error("Erro ao carregar jornada:", error);
+    return defaultJornada;
+  }
+}
+
+export function salvarJornada(jornada: any) {
+  try {
+    localStorage.setItem("jornada_trabalho", JSON.stringify(jornada));
+    return true;
+  } catch (error) {
+    console.error("Erro ao salvar jornada:", error);
+    return false;
+  }
+}
+
+// Deprecated (Kept for backwards compatibility but not used or relies on local fallback)
 export async function getWorkSettings(): Promise<WorkSettings | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data } = await supabase
-    .from('work_settings')
-    .select('*')
-    .eq('user_id', user.id)
-    .single();
-
-  return data as WorkSettings | null;
+  try {
+    const { data } = await supabase
+      .from('work_settings')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+    return data as WorkSettings | null;
+  } catch (e) {
+    return null;
+  }
 }
 
 export async function getRemainingWorkingDays(fromDate?: Date): Promise<number> {
@@ -26,17 +66,12 @@ export async function getRemainingWorkingDays(fromDate?: Date): Promise<number> 
   const currentDate = fromDate || new Date();
   const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-  // Fetch work settings and holidays
-  const [settingsRes, holidaysRes] = await Promise.all([
-    supabase.from('work_settings').select('*').eq('user_id', user.id).single(),
-    supabase.from('custom_holidays').select('*').eq('user_id', user.id),
-  ]);
-
-  const workSettings = settingsRes.data as WorkSettings | null;
+  // Fetch holidays ONLY
+  const holidaysRes = await supabase.from('custom_holidays').select('*').eq('user_id', user.id);
   const holidays = (holidaysRes.data || []) as CustomHoliday[];
 
   const holidayDates = new Set(holidays.map(h => h.data));
-  const workMode = workSettings?.work_mode || 'Segunda-sexta';
+  const jornada = carregarJornada();
 
   let workingDays = 0;
   const dateIterator = new Date(currentDate);
@@ -45,20 +80,21 @@ export async function getRemainingWorkingDays(fromDate?: Date): Promise<number> 
   while (dateIterator <= lastDayOfMonth) {
     const dateStr = dateIterator.toISOString().split('T')[0];
 
-    if (!holidayDates.has(dateStr)) {
-      const dayOfWeek = dateIterator.getDay();
+    // Se usarFeriados for true, avaliamos se é um dia do Set, caso contrário ignoramos o bloqueio do feriado.
+    if (!jornada.usarFeriados || !holidayDates.has(dateStr)) {
+      const dayOfWeek = dateIterator.getDay(); // JS getDay: 0=Sun, 1=Mon...6=Sat
 
       let isWorkDay = false;
-      if (workMode === 'Segunda-sexta') {
+      if (jornada.modo === 'Segunda-sexta') {
         isWorkDay = dayOfWeek >= 1 && dayOfWeek <= 5;
-      } else if (workMode === 'Segunda-sabado') {
+      } else if (jornada.modo === 'Segunda-sabado') {
         isWorkDay = dayOfWeek >= 1 && dayOfWeek <= 6;
-      } else if (workMode === 'Todos os dias') {
+      } else if (jornada.modo === 'Todos os dias') {
         isWorkDay = true;
-      } else if (workMode === 'Personalizado') {
-        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const customSchedule = workSettings?.custom_schedule_json || {};
-        isWorkDay = customSchedule[dayNames[dayOfWeek]] === true;
+      } else if (jornada.modo === 'Personalizado') {
+        // Assume diasSelecionados has JS Day values (0-6) mapped previously (In WorkSettings we mapped them correctly).
+        // Note: Se o array tiver valores 1 a 6 e 0 para dom, includes funcionará.
+        isWorkDay = Array.isArray(jornada.diasSelecionados) && jornada.diasSelecionados.includes(dayOfWeek);
       }
 
       if (isWorkDay) {

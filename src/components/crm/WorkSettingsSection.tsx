@@ -7,28 +7,20 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Plus, Calendar } from 'lucide-react';
 import {
-  getWorkSettings,
-  saveWorkSettings,
   addCustomHoliday,
   deleteCustomHoliday,
   fetchCustomHolidays,
   getRemainingWorkingDays,
   WorkMode,
   CustomHoliday,
+  carregarJornada,
+  salvarJornada,
+  defaultJornada,
 } from '@/lib/crm-data';
 import { toast } from 'sonner';
 
 export function WorkSettingsSection() {
-  const [workMode, setWorkMode] = useState<WorkMode>('Segunda-sexta');
-  const [customSchedule, setCustomSchedule] = useState<Record<string, boolean>>({
-    Monday: true,
-    Tuesday: true,
-    Wednesday: true,
-    Thursday: true,
-    Friday: true,
-    Saturday: false,
-    Sunday: false,
-  });
+  const [jornada, setJornada] = useState(carregarJornada());
   const [holidays, setHolidays] = useState<CustomHoliday[]>([]);
   const [newHolidayDate, setNewHolidayDate] = useState('');
   const [newHolidayDesc, setNewHolidayDesc] = useState('');
@@ -41,30 +33,22 @@ export function WorkSettingsSection() {
     loadSettings();
   }, []);
 
-  // Recalculate remaining days when settings change
+  // Debug statement and Auto-Persistence as requested by user
   useEffect(() => {
+    console.log("Jornada atual:", jornada);
+    salvarJornada(jornada);
     calculateRemainingDays();
-  }, [workMode, customSchedule, holidays]);
+  }, [jornada, holidays]);
 
   async function loadSettings() {
     try {
       setLoading(true);
-      const [settings, holidaysList] = await Promise.all([
-        getWorkSettings(),
-        fetchCustomHolidays(),
-      ]);
-
-      if (settings) {
-        setWorkMode(settings.work_mode);
-        if (settings.custom_schedule_json) {
-          setCustomSchedule(settings.custom_schedule_json);
-        }
-      }
-
+      // Feriados ainda vêm do banco como pedido se necessário (user n citou no prompt, apenas jornada)
+      const holidaysList = await fetchCustomHolidays();
       setHolidays(holidaysList);
     } catch (error) {
-      console.error('Error loading work settings:', error);
-      toast.error('Erro ao carregar configurações');
+      console.error('Error loading holidays:', error);
+      toast.error('Erro ao carregar feriados');
     } finally {
       setLoading(false);
     }
@@ -79,18 +63,31 @@ export function WorkSettingsSection() {
     }
   }
 
-  async function handleSaveSettings() {
-    try {
-      setSaving(true);
-      const scheduleToSave = workMode === 'Personalizado' ? customSchedule : undefined;
-      await saveWorkSettings(workMode, scheduleToSave);
-      toast.success('Jornada de trabalho salva com sucesso!');
-    } catch (error) {
-      console.error('Error saving work settings:', error);
-      toast.error('Erro ao salvar configurações');
-    } finally {
-      setSaving(false);
+  function handleSalvar() {
+    setSaving(true);
+    const sucesso = salvarJornada(jornada);
+    if (sucesso) {
+      toast.success('Jornada salva com sucesso!');
+    } else {
+      toast.error('Erro ao salvar jornada');
     }
+    setSaving(false);
+  }
+
+  function toggleDia(dia: number) {
+    setJornada((prev: typeof defaultJornada) => {
+      let novosDias;
+      if (prev.diasSelecionados.includes(dia)) {
+        novosDias = prev.diasSelecionados.filter((d: number) => d !== dia);
+      } else {
+        novosDias = [...prev.diasSelecionados, dia];
+      }
+
+      return {
+        ...prev,
+        diasSelecionados: novosDias
+      };
+    });
   }
 
   async function handleAddHoliday() {
@@ -124,15 +121,15 @@ export function WorkSettingsSection() {
     }
   }
 
-  const dayLabels: Record<string, string> = {
-    Monday: 'Segunda',
-    Tuesday: 'Terça',
-    Wednesday: 'Quarta',
-    Thursday: 'Quinta',
-    Friday: 'Sexta',
-    Saturday: 'Sábado',
-    Sunday: 'Domingo',
-  };
+  const dayLabels = [
+    { value: 1, label: 'Segunda' },
+    { value: 2, label: 'Terça' },
+    { value: 3, label: 'Quarta' },
+    { value: 4, label: 'Quinta' },
+    { value: 5, label: 'Sexta' },
+    { value: 6, label: 'Sábado' },
+    { value: 0, label: 'Domingo' }, // JS Date API day 0 is Sunday
+  ];
 
   const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -150,7 +147,7 @@ export function WorkSettingsSection() {
         {/* Work Mode Selection */}
         <div className="space-y-3">
           <Label>Modo de Trabalho</Label>
-          <RadioGroup value={workMode} onValueChange={(value) => setWorkMode(value as WorkMode)}>
+          <RadioGroup value={jornada.modo} onValueChange={(value) => setJornada({...jornada, modo: value})}>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="Segunda-sexta" id="mode-weekdays" />
               <Label htmlFor="mode-weekdays" className="cursor-pointer font-normal">
@@ -179,27 +176,22 @@ export function WorkSettingsSection() {
         </div>
 
         {/* Custom Schedule */}
-        {workMode === 'Personalizado' && (
+        {jornada.modo === 'Personalizado' && (
           <div className="space-y-3 border rounded-lg p-4 bg-gray-50">
             <Label>Selecione os dias que você trabalha</Label>
             <div className="grid grid-cols-2 gap-3">
-              {dayOrder.map((day) => (
-                <div key={day} className="flex items-center space-x-2">
+              {Array.isArray(dayLabels) ? dayLabels.map((day) => (
+                <div key={day.value} className="flex items-center space-x-2">
                   <Checkbox
-                    id={`day-${day}`}
-                    checked={customSchedule[day] || false}
-                    onCheckedChange={(checked) => {
-                      setCustomSchedule({
-                        ...customSchedule,
-                        [day]: checked,
-                      });
-                    }}
+                    id={`day-${day.value}`}
+                    checked={Array.isArray(jornada?.diasSelecionados) && jornada.diasSelecionados.includes(day.value)}
+                    onCheckedChange={() => toggleDia(day.value)}
                   />
-                  <Label htmlFor={`day-${day}`} className="cursor-pointer font-normal">
-                    {dayLabels[day]}
+                  <Label htmlFor={`day-${day.value}`} className="cursor-pointer font-normal">
+                    {day.label}
                   </Label>
                 </div>
-              ))}
+              )) : null}
             </div>
           </div>
         )}
@@ -214,7 +206,7 @@ export function WorkSettingsSection() {
         </div>
 
         {/* Save Button */}
-        <Button onClick={handleSaveSettings} disabled={saving} className="w-full">
+        <Button onClick={handleSalvar} disabled={saving} className="w-full">
           {saving ? 'Salvando...' : 'Salvar Jornada de Trabalho'}
         </Button>
 

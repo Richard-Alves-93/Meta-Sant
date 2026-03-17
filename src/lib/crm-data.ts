@@ -78,6 +78,9 @@ export {
   addCustomHoliday,
   deleteCustomHoliday,
   fetchCustomHolidays,
+  carregarJornada,
+  salvarJornada,
+  defaultJornada,
 } from '@/services/workSettingsService';
 
 // ==================== Purchase Service Exports ====================
