@@ -42,6 +42,33 @@ export function salvarJornada(jornada: any) {
   }
 }
 
+export const defaultFeriados: CustomHoliday[] = [];
+
+export function carregarFeriados(): CustomHoliday[] {
+  try {
+    const data = localStorage.getItem("feriados");
+    if (!data) return defaultFeriados;
+
+    const parsed = JSON.parse(data);
+    if (!Array.isArray(parsed)) return defaultFeriados;
+
+    return parsed;
+  } catch (error) {
+    console.error("Erro ao carregar feriados:", error);
+    return defaultFeriados;
+  }
+}
+
+export function salvarFeriados(lista: CustomHoliday[]) {
+  try {
+    localStorage.setItem("feriados", JSON.stringify(lista));
+    return true;
+  } catch (error) {
+    console.error("Erro ao salvar feriados:", error);
+    return false;
+  }
+}
+
 // Deprecated (Kept for backwards compatibility but not used or relies on local fallback)
 export async function getWorkSettings(): Promise<WorkSettings | null> {
   const { data: { user } } = await supabase.auth.getUser();
@@ -66,10 +93,8 @@ export async function getRemainingWorkingDays(fromDate?: Date): Promise<number> 
   const currentDate = fromDate || new Date();
   const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-  // Fetch holidays ONLY
-  const holidaysRes = await supabase.from('custom_holidays').select('*').eq('user_id', user.id);
-  const holidays = (holidaysRes.data || []) as CustomHoliday[];
-
+  // Usar a base local em vez de fetch no banco para evitar quebras
+  const holidays = carregarFeriados();
   const holidayDates = new Set(holidays.map(h => h.data));
   const jornada = carregarJornada();
 
@@ -152,32 +177,27 @@ export async function saveWorkSettings(workMode: WorkMode, customSchedule?: Reco
 
 export async function addCustomHoliday(data: string, descricao?: string) {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-
-  const { error } = await supabase.from('custom_holidays').insert({
-    user_id: user.id,
+  const list = carregarFeriados();
+  
+  const novoFeriado: CustomHoliday = {
+    id: crypto.randomUUID(),
+    user_id: user?.id || 'local-user',
     data,
     descricao,
-  });
+    created_at: new Date().toISOString()
+  };
 
-  if (error) throw error;
+  const atualizada = [...list, novoFeriado];
+  salvarFeriados(atualizada);
 }
 
 export async function deleteCustomHoliday(holidayId: string) {
-  const { error } = await supabase.from('custom_holidays').delete().eq('id', holidayId);
-  if (error) throw error;
+  const list = carregarFeriados();
+  const atualizada = list.filter(h => h.id !== holidayId);
+  salvarFeriados(atualizada);
 }
 
 export async function fetchCustomHolidays(): Promise<CustomHoliday[]> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-
-  const { data, error } = await supabase
-    .from('custom_holidays')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('data', { ascending: true });
-
-  if (error) throw error;
-  return data as CustomHoliday[];
+  // Ignoramos a rede completamente para ter um retorno infalível síncrono ou pseudo-assíncrono
+  return carregarFeriados();
 }

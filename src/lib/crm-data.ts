@@ -81,6 +81,9 @@ export {
   carregarJornada,
   salvarJornada,
   defaultJornada,
+  carregarFeriados,
+  salvarFeriados,
+  defaultFeriados,
 } from '@/services/workSettingsService';
 
 // ==================== Purchase Service Exports ====================

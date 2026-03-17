@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 
 export function WorkSettingsSection() {
   const [jornada, setJornada] = useState(carregarJornada());
-  const [holidays, setHolidays] = useState<CustomHoliday[]>([]);
+  const [feriados, setFeriados] = useState<CustomHoliday[]>(carregarFeriados());
   const [newHolidayDate, setNewHolidayDate] = useState('');
   const [newHolidayDesc, setNewHolidayDesc] = useState('');
   const [loading, setLoading] = useState(true);
@@ -37,18 +37,27 @@ export function WorkSettingsSection() {
   useEffect(() => {
     console.log("Jornada atual:", jornada);
     salvarJornada(jornada);
+    
+    // Auto-persistency and Debug for Holidays
+    console.log("Feriados:", feriados);
+    if (!Array.isArray(feriados)) {
+      console.warn("Feriados inválidos, resetando...");
+      setFeriados(defaultFeriados);
+    } else {
+      salvarFeriados(feriados);
+    }
+    
     calculateRemainingDays();
-  }, [jornada, holidays]);
+  }, [jornada, feriados]);
 
   async function loadSettings() {
     try {
       setLoading(true);
-      // Feriados ainda vêm do banco como pedido se necessário (user n citou no prompt, apenas jornada)
-      const holidaysList = await fetchCustomHolidays();
-      setHolidays(holidaysList);
+      // Feriados agora vêm do hook inicial (localStorage) sincrono. 
+      // Se houvesse banco, usaríamos fetchCustomHolidays. Mantemos o loading artificial pra não quebrar a spec.
     } catch (error) {
-      console.error('Error loading holidays:', error);
-      toast.error('Erro ao carregar feriados');
+      console.error('Error loading settings:', error);
+      toast.error('Erro ao carregar configurações');
     } finally {
       setLoading(false);
     }
@@ -97,11 +106,22 @@ export function WorkSettingsSection() {
     }
 
     try {
-      await addCustomHoliday(newHolidayDate, newHolidayDesc || undefined);
+      const novo: CustomHoliday = {
+        id: crypto.randomUUID(),
+        user_id: 'local-user', // Mock to satisfy TS interface
+        data: newHolidayDate,
+        descricao: inlineDesc || undefined,
+        created_at: new Date().toISOString()
+      };
+      
+      setFeriados(prev => { 
+        const lista = Array.isArray(prev) ? prev : []; 
+        const atualizada = [...lista, novo];
+        return atualizada;
+      });
+
       setNewHolidayDate('');
       setNewHolidayDesc('');
-      const updatedHolidays = await fetchCustomHolidays();
-      setHolidays(updatedHolidays);
       toast.success('Feriado adicionado!');
     } catch (error) {
       console.error('Error adding holiday:', error);
@@ -111,9 +131,11 @@ export function WorkSettingsSection() {
 
   async function handleDeleteHoliday(holidayId: string) {
     try {
-      await deleteCustomHoliday(holidayId);
-      const updatedHolidays = await fetchCustomHolidays();
-      setHolidays(updatedHolidays);
+      setFeriados(prev => { 
+        const lista = Array.isArray(prev) ? prev : []; 
+        const atualizada = lista.filter(h => h.id !== holidayId);
+        return atualizada;
+      });
       toast.success('Feriado removido!');
     } catch (error) {
       console.error('Error deleting holiday:', error);
@@ -250,9 +272,9 @@ export function WorkSettingsSection() {
           </div>
 
           {/* Holidays List */}
-          {holidays.length > 0 ? (
+          {Array.isArray(feriados) && feriados.length > 0 ? (
             <div className="space-y-2">
-              {holidays.map((holiday) => (
+              {feriados.map((holiday) => (
                 <div key={holiday.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border">
                   <div>
                     <p className="font-medium text-sm">
