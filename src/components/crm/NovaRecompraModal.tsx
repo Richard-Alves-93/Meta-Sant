@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { Customer, Pet, Product, fetchCustomers, fetchPets, fetchProducts } from "@/lib/crm-data";
+import { formatISODate } from "@/utils/date";
 
 interface NovaRecompraModalProps {
   open: boolean;
