@@ -14,12 +14,18 @@ const PetModal = ({ open, onClose, onSave, editingPet, customers }: PetModalProp
   const [nome, setNome] = useState("");
   const [especie, setEspecie] = useState("Cachorro");
   const [raca, setRaca] = useState("");
+  const [racasList, setRacasList] = useState<string[]>([]);
   const [dataAniversario, setDataAniversario] = useState("");
   const [sexo, setSexo] = useState("Macho");
   const [porte, setPorte] = useState("Médio");
   const [peso, setPeso] = useState("");
   const [customerId, setCustomerId] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const racasSalvas = JSON.parse(localStorage.getItem("racas") || "[]");
+    setRacasList(Array.isArray(racasSalvas) ? racasSalvas : []);
+  }, []);
 
   useEffect(() => {
     if (editingPet) {
@@ -48,6 +54,16 @@ const PetModal = ({ open, onClose, onSave, editingPet, customers }: PetModalProp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nome.trim() || !customerId) return;
+
+    // Salvar raça nova no localStorage se não existir
+    if (raca.trim()) {
+      const racaFormatada = raca.trim();
+      if (!racasList.includes(racaFormatada)) {
+        const novaLista = [...racasList, racaFormatada];
+        setRacasList(novaLista);
+        localStorage.setItem("racas", JSON.stringify(novaLista));
+      }
+    }
 
     setLoading(true);
     try {
@@ -119,8 +135,6 @@ const PetModal = ({ open, onClose, onSave, editingPet, customers }: PetModalProp
               >
                 <option value="Cachorro">Cachorro</option>
                 <option value="Gato">Gato</option>
-                <option value="Pássaro">Pássaro</option>
-                <option value="Outro">Outro</option>
               </select>
             </div>
 
@@ -128,11 +142,17 @@ const PetModal = ({ open, onClose, onSave, editingPet, customers }: PetModalProp
               <label className="text-sm font-medium text-foreground">Raça</label>
               <input 
                 type="text" 
+                list="list-racas"
                 value={raca}
                 onChange={(e) => setRaca(e.target.value)}
                 placeholder="Ex: Poodle"
                 className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" 
               />
+              <datalist id="list-racas">
+                {racasList.map((r, idx) => (
+                  <option key={idx} value={r} />
+                ))}
+              </datalist>
             </div>
 
             <div className="space-y-2">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, AlertCircle } from "lucide-react";
 import { Product } from "@/lib/crm-data";
+import { toast } from "sonner";
 
 interface ProdutoModalProps {
   open: boolean;
@@ -12,7 +13,7 @@ interface ProdutoModalProps {
 const ProdutoModal = ({ open, onClose, onSave, editingProduct }: ProdutoModalProps) => {
   const [nome, setNome] = useState("");
   const [categoria, setCategoria] = useState("Ração");
-  const [prazoRecompra, setPrazoRecompra] = useState("30");
+  const [prazoRecompra, setPrazoRecompra] = useState("");
   const [diasAviso, setDiasAviso] = useState("3");
   const [mensagem, setMensagem] = useState("Olá {cliente}, a reposição do(a) {produto} do(a) {pet} está próxima! Quer que eu já separe para você?");
   const [loading, setLoading] = useState(false);
@@ -27,7 +28,7 @@ const ProdutoModal = ({ open, onClose, onSave, editingProduct }: ProdutoModalPro
     } else {
       setNome("");
       setCategoria("Ração");
-      setPrazoRecompra("30");
+      setPrazoRecompra("");
       setDiasAviso("3");
       setMensagem("Olá {cliente}, a reposição do(a) {produto} do(a) {pet} está próxima! Quer que eu já separe para você?");
     }
@@ -39,13 +40,21 @@ const ProdutoModal = ({ open, onClose, onSave, editingProduct }: ProdutoModalPro
     e.preventDefault();
     if (!nome.trim() || !prazoRecompra) return;
 
+    const numericPrazo = Number(prazoRecompra);
+    const numericAviso = Number(diasAviso);
+
+    if (isNaN(numericPrazo) || numericPrazo <= 0) {
+      toast.error("O prazo de recompra deve ser maior que zero.");
+      return;
+    }
+
     setLoading(true);
     try {
       await onSave({
         nome,
         categoria: categoria || null,
-        prazo_recompra_dias: parseInt(prazoRecompra, 10),
-        dias_aviso_previo: parseInt(diasAviso, 10),
+        prazo_recompra_dias: numericPrazo,
+        dias_aviso_previo: isNaN(numericAviso) ? 3 : numericAviso,
         mensagem_padrao: mensagem || null,
       });
     } finally {

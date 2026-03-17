@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WizardPet } from "../../hooks/useWizardState";
 import { Trash2 } from "lucide-react";
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
 
 interface PetFormProps {
   pet: WizardPet;
@@ -20,6 +20,24 @@ interface PetFormProps {
  */
 
 function PetFormComponent({ pet, index, onPetChange, onRemove, showRemove }: PetFormProps) {
+  const [racasList, setRacasList] = useState<string[]>([]);
+
+  useEffect(() => {
+    const racasSalvas = JSON.parse(localStorage.getItem("racas") || "[]");
+    setRacasList(Array.isArray(racasSalvas) ? racasSalvas : []);
+  }, []);
+
+  const handleRacaBlur = (valor: string) => {
+    if (valor.trim()) {
+      const racaFormatada = valor.trim();
+      if (!racasList.includes(racaFormatada)) {
+        const novaLista = [...racasList, racaFormatada];
+        setRacasList(novaLista);
+        localStorage.setItem("racas", JSON.stringify(novaLista));
+      }
+    }
+  };
+
   return (
     <div className="border border-border/50 rounded-lg p-4 bg-secondary/20">
       <div className="flex justify-between items-start mb-4">
@@ -63,11 +81,6 @@ function PetFormComponent({ pet, index, onPetChange, onRemove, showRemove }: Pet
               <SelectContent>
                 <SelectItem value="Cão">Cão</SelectItem>
                 <SelectItem value="Gato">Gato</SelectItem>
-                <SelectItem value="Coelho">Coelho</SelectItem>
-                <SelectItem value="Ave">Ave</SelectItem>
-                <SelectItem value="Roedor">Roedor</SelectItem>
-                <SelectItem value="Réptil">Réptil</SelectItem>
-                <SelectItem value="Outro">Outro</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -79,10 +92,17 @@ function PetFormComponent({ pet, index, onPetChange, onRemove, showRemove }: Pet
             <Input
               id={`pet-${index}-raca`}
               placeholder="Ex: Poodle"
+              list={`list-racas-wizard-${index}`}
               value={pet.raca}
               onChange={(e) => onPetChange(index, 'raca', e.target.value)}
+              onBlur={(e) => handleRacaBlur(e.target.value)}
               className="mt-1 h-8"
             />
+            <datalist id={`list-racas-wizard-${index}`}>
+              {racasList.map((r, idx) => (
+                <option key={idx} value={r} />
+              ))}
+            </datalist>
           </div>
         </div>
 
