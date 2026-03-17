@@ -5,6 +5,7 @@ import { WizardPurchase, WizardPet } from "../../hooks/useWizardState";
 import { Product } from "@/lib/crm-data";
 import { Trash2 } from "lucide-react";
 import ProductCombobox from "../../../ProductCombobox";
+import { memo } from "react";
 
 interface CompraFormProps {
   purchase: WizardPurchase;
@@ -17,13 +18,12 @@ interface CompraFormProps {
 }
 
 /**
- * ETAPA 6c: CompraForm - Reusable Purchase Component
- * Renders single purchase form with pet/product selection
- * Auto-fills prazo_recompra from product selection
- * ~120 lines completely reusable
+ * ETAPA 6c + 8: CompraForm - Memoized Reusable Component
+ * Prevents re-render when sibling purchases change
+ * Only renders when own data changes
  */
 
-export function CompraForm({
+function CompraFormComponent({
   purchase,
   index,
   pets,
@@ -137,3 +137,5 @@ export function CompraForm({
     </div>
   );
 }
+
+export const CompraForm = memo(CompraFormComponent);

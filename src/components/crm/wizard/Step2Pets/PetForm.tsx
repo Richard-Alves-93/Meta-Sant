@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WizardPet } from "../../hooks/useWizardState";
 import { Trash2 } from "lucide-react";
+import { memo } from "react";
 
 interface PetFormProps {
   pet: WizardPet;
@@ -13,12 +14,12 @@ interface PetFormProps {
 }
 
 /**
- * ETAPA 6b: PetForm - Reusable Pet Component
- * Renders single pet form with edit/delete actions
- * ~95 lines completely reusable
+ * ETAPA 6b + 8: PetForm - Memoized Reusable Component
+ * Prevents re-render when sibling pets change, only renders when own data changes
+ * Custom comparison ensures only THIS pet's updates trigger re-render
  */
 
-export function PetForm({ pet, index, onPetChange, onRemove, showRemove }: PetFormProps) {
+function PetFormComponent({ pet, index, onPetChange, onRemove, showRemove }: PetFormProps) {
   return (
     <div className="border border-border/50 rounded-lg p-4 bg-secondary/20">
       <div className="flex justify-between items-start mb-4">
@@ -153,3 +154,5 @@ export function PetForm({ pet, index, onPetChange, onRemove, showRemove }: PetFo
     </div>
   );
 }
+
+export const PetForm = memo(PetFormComponent);
