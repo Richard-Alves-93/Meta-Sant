@@ -16,7 +16,7 @@ const NovaRecompraModal = ({ open, onClose, onSave }: NovaRecompraModalProps) =>
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [selectedPetId, setSelectedPetId] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
-  const [dataCompra, setDataCompra] = useState(new Date().toISOString().split('T')[0]);
+  const [dataCompra, setDataCompra] = useState(() => formatISODate(new Date()));
   const [prazoRecompra, setPrazoRecompra] = useState<number>(30);
   const [loading, setLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -32,7 +32,7 @@ const NovaRecompraModal = ({ open, onClose, onSave }: NovaRecompraModalProps) =>
       setSelectedCustomerId("");
       setSelectedPetId("");
       setSelectedProductId("");
-      setDataCompra(new Date().toISOString().split('T')[0]);
+      setDataCompra(formatISODate(new Date()));
       setPrazoRecompra(30);
       setFormErrors({});
     }
@@ -64,8 +64,8 @@ const NovaRecompraModal = ({ open, onClose, onSave }: NovaRecompraModalProps) =>
     lembrete.setDate(lembrete.getDate() - diasAviso);
 
     return {
-      proximaData: proxima.toISOString().split('T')[0],
-      dataLembrete: lembrete.toISOString().split('T')[0]
+      proximaData: formatISODate(proxima),
+      dataLembrete: formatISODate(lembrete)
     };
   };
 

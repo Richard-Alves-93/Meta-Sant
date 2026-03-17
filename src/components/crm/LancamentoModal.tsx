@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lancamento, formatCurrency } from "@/lib/crm-data";
+import { formatISODate } from "@/utils/date";
 
 interface LancamentoModalProps {
   open: boolean;
@@ -23,7 +24,7 @@ const LancamentoModal = ({ open, onClose, onSave, editingLancamento }: Lancament
       setBruto(String(editingLancamento.valorBruto));
       setDesconto(String(editingLancamento.desconto));
     } else {
-      setData(new Date().toISOString().split("T")[0]);
+      setData(formatISODate(new Date()));
       setBruto(""); setDesconto("");
     }
   }, [editingLancamento, open]);

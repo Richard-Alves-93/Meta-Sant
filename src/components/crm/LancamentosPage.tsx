@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { CrmDatabase, formatCurrency, formatDate, Lancamento } from "@/lib/crm-data";
+import { parseLocalDate, formatISODate } from "@/utils/date";
 import KpiCard from "./KpiCard";
 import { Pencil, Trash2, DollarSign, TrendingDown, Wallet } from "lucide-react";
 
@@ -16,7 +17,7 @@ const LancamentosPage = ({ db, onAdd, onEdit, onDelete, onOpenModal }: Lancament
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
-  const [data, setData] = useState(() => new Date().toISOString().split("T")[0]);
+  const [data, setData] = useState(() => formatISODate(new Date()));
   const [bruto, setBruto] = useState("");
   const [desconto, setDesconto] = useState("");
 
@@ -25,7 +26,7 @@ const LancamentosPage = ({ db, onAdd, onEdit, onDelete, onOpenModal }: Lancament
     if (filterMonth) {
       const [y, m] = filterMonth.split("-");
       list = list.filter(l => {
-        const d = new Date(l.data);
+        const d = parseLocalDate(l.data);
         return d.getFullYear() === parseInt(y) && d.getMonth() + 1 === parseInt(m);
       });
     }
@@ -40,7 +41,7 @@ const LancamentosPage = ({ db, onAdd, onEdit, onDelete, onOpenModal }: Lancament
     const v = parseFloat(bruto);
     if (!data || !v || v <= 0) return;
     onAdd(data, v, parseFloat(desconto) || 0);
-    setData(new Date().toISOString().split("T")[0]);
+    setData(formatISODate(new Date()));
     setBruto(""); setDesconto("");
   };
 

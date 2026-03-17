@@ -4,6 +4,14 @@
  */
 
 /**
+ * Cria uma data cravada ao meio-dia, evitando que a interpretação local de fusos jogue o dia para trás.
+ */
+export function criarDataSemFuso(ano: number, mes: number, dia: number): Date {
+  // Passando 12 para garantir que conversões GMT-3/GMT-4 nunca voltem ao dia/mês anterior.
+  return new Date(ano, mes - 1, dia, 12, 0, 0);
+}
+
+/**
  * Parse uma string de data local (YYYY-MM-DD) e retorna Date sem timezone issues
  */
 export function parseLocalDate(dateStr: string): Date {
@@ -14,7 +22,7 @@ export function parseLocalDate(dateStr: string): Date {
   if (!year || !month || !day) {
     throw new Error(`Formato de data inválido: ${dateStr}. Use YYYY-MM-DD`);
   }
-  return new Date(year, month - 1, day);
+  return criarDataSemFuso(year, month, day);
 }
 
 /**

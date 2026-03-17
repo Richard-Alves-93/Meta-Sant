@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { CrmDatabase, getLancamentosDoMes, formatCurrency, getDiasMes, calcularVendasNecessarias, Lancamento, formatDate, getRemainingWorkingDays } from "@/lib/crm-data";
+import { parseLocalDate } from "@/utils/date";
 import KpiCard from "./KpiCard";
 import MetaCard from "./MetaCard";
 import RecomprasHoje from "../dashboard/RecomprasHoje";
@@ -46,7 +47,7 @@ const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta, onNavig
     return Array.from({ length: dias }, (_, i) => {
       const dia = i + 1;
       const valor = lancamentosMes
-        .filter(l => new Date(l.data).getDate() === dia)
+        .filter(l => parseLocalDate(l.data).getDate() === dia)
         .reduce((s, l) => s + l.valorLiquido, 0);
       return { dia, valor };
     });
@@ -62,7 +63,7 @@ const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta, onNavig
     return Array.from({ length: Math.min(hoje, diasMes) }, (_, i) => {
       const dia = i + 1;
       acum += lancamentosMes
-        .filter(l => new Date(l.data).getDate() === dia)
+        .filter(l => parseLocalDate(l.data).getDate() === dia)
         .reduce((s, l) => s + l.valorLiquido, 0);
       return { dia, meta: metaDiaria * dia, realizado: acum };
     });

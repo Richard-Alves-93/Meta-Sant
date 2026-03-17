@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { PetPurchase, Product, fetchProducts } from "@/lib/crm-data";
+import { formatISODate } from "@/utils/date";
 
 interface RecompraModalProps {
   open: boolean;
@@ -12,7 +13,7 @@ interface RecompraModalProps {
 const RecompraModal = ({ open, onClose, onSave, purchase }: RecompraModalProps) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
-  const [dataCompra, setDataCompra] = useState(new Date().toISOString().split('T')[0]);
+  const [dataCompra, setDataCompra] = useState(() => formatISODate(new Date()));
   const [loading, setLoading] = useState(false);
   
   useEffect(() => {
@@ -24,7 +25,7 @@ const RecompraModal = ({ open, onClose, onSave, purchase }: RecompraModalProps) 
   useEffect(() => {
     if (purchase) {
       setSelectedProductId(purchase.product_id);
-      setDataCompra(new Date().toISOString().split('T')[0]);
+      setDataCompra(formatISODate(new Date()));
     }
   }, [purchase, open]);
 

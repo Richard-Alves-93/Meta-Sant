@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { CrmDatabase, formatCurrency, formatDate, getDiasMes } from "@/lib/crm-data";
+import { parseLocalDate } from "@/utils/date";
 import KpiCard from "./KpiCard";
 import { DollarSign, TrendingDown, Award, TrendingUp } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -22,7 +23,7 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
     return Array.from({ length: dias }, (_, i) => {
       const dia = i + 1;
       const valor = lancamentos
-        .filter(l => new Date(l.data).getDate() === dia)
+        .filter(l => parseLocalDate(l.data).getDate() === dia)
         .reduce((s, l) => s + l.valorLiquido, 0);
       return { dia, valor };
     });

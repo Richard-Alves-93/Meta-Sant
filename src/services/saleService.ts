@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { withErrorHandler, handleSupabaseError } from "@/services/errorHandler";
 import { getAuthUser } from "@/services/authService";
 import { getRemainingWorkingDays } from "@/services/workSettingsService";
+import { parseLocalDate } from "@/utils/date";
 import type { Meta, Lancamento, CrmDatabase } from "@/lib/types";
 
 // ---- Database Fetching ----
@@ -110,9 +111,10 @@ export async function deleteLancamento(id: string) {
 // ---- Helper Functions ----
 
 export function getLancamentosDoMes(db: CrmDatabase): Lancamento[] {
-  const hoje = new Date();
+  const hoje = new Date(); // Usamos new Date() nativo só para saber que dia é hoje em tempo real
   return db.lancamentos.filter(l => {
-    const d = new Date(l.data);
+    // 🚨 Aqui era onde a timezone bugava e mandava vendas dia 01/3 pro final de fevereiro (02). Agora tem parse seguro de meio dia interno:
+    const d = parseLocalDate(l.data);
     return d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
   });
 }
