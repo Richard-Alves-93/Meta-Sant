@@ -31,8 +31,16 @@ const DynamicPwaSetup = () => {
   useEffect(() => {
     // 1. Register Service Worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(error => {
+      navigator.serviceWorker.register('/sw.js').then(registration => {
+        // Força buscar nova versão
+        registration.update();
+      }).catch(error => {
         console.error('Service Worker registration failed:', error);
+      });
+
+      // Busca por qualquer registro pré-existente e manda atualizar também (fallback)
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(reg => reg.update());
       });
     }
 
