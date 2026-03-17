@@ -1,0 +1,81 @@
+/**
+ * ETAPA 9: Pet Service
+ * Handles all pet-related data operations
+ */
+
+import { supabase } from "@/integrations/supabase/client";
+import { withErrorHandler, handleSupabaseError, validateCanDelete } from "@/services/errorHandler";
+import { getAuthUser } from "@/services/authService";
+import type { Pet } from "@/lib/types";
+
+export async function fetchPets(): Promise<Pet[]> {
+  const { data, error } = await supabase.from('pets').select('*').order('nome');
+  if (error) throw error;
+  return data as Pet[];
+}
+
+export async function fetchPetsByCustomer(customerId: string): Promise<Pet[]> {
+  const { data, error } = await supabase.from('pets').select('*').eq('customer_id', customerId).order('nome');
+  if (error) throw error;
+  return data as Pet[];
+}
+
+export async function addPet(pet: Omit<Pet, 'id'>): Promise<Pet> {
+  const user = await getAuthUser();
+
+  // Sanitize date fields: convert empty strings to null
+  const sanitizedPet = {
+    ...pet,
+    data_aniversario: pet.data_aniversario?.trim() ? pet.data_aniversario : null,
+    user_id: user.id
+  };
+
+  const { data, error } = await supabase.from('pets').insert(sanitizedPet as any).select().single();
+  if (error) throw handleSupabaseError(error, 'addPet');
+  return data as Pet;
+}
+
+export async function updatePet(id: string, pet: Partial<Omit<Pet, 'id'>>) {
+  // Sanitize date fields: convert empty strings to null
+  const sanitizedPet = {
+    ...pet,
+    data_aniversario: pet.data_aniversario?.trim() ? pet.data_aniversario : null
+  };
+
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('pets').update(sanitizedPet).eq('id', id);
+      if (error) throw handleSupabaseError(error, 'updatePet');
+    },
+    'updatePet',
+    undefined,
+    { petId: id }
+  );
+}
+
+export async function deletePet(id: string) {
+  // Validate cascade - ensure no purchase records exist for this pet
+  await validateCanDelete(
+    'pets',
+    id,
+    async () => {
+      const { count, error } = await supabase
+        .from('pet_purchases')
+        .select('*', { count: 'exact', head: true })
+        .eq('pet_id', id);
+      if (error) throw error;
+      return count || 0;
+    }
+  );
+
+  // If validation passes, proceed with deletion
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('pets').delete().eq('id', id);
+      if (error) throw handleSupabaseError(error, 'deletePet');
+    },
+    'deletePet',
+    undefined,
+    { petId: id }
+  );
+}

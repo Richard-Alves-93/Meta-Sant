@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { WizardPurchase, WizardPet } from "../../hooks/useWizardState";
 import { Product } from "@/lib/crm-data";
 import { Trash2 } from "lucide-react";
-import ProductCombobox from "../../../ProductCombobox";
+import ProductCombobox from "@/components/crm/ProductCombobox";
 import { memo } from "react";
 
 interface CompraFormProps {
