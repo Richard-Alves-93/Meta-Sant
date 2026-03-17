@@ -16,6 +16,9 @@ import {
   carregarJornada,
   salvarJornada,
   defaultJornada,
+  carregarFeriados,
+  salvarFeriados,
+  defaultFeriados,
 } from '@/lib/crm-data';
 import { toast } from 'sonner';
 
@@ -110,7 +113,7 @@ export function WorkSettingsSection() {
         id: crypto.randomUUID(),
         user_id: 'local-user', // Mock to satisfy TS interface
         data: newHolidayDate,
-        descricao: inlineDesc || undefined,
+        descricao: newHolidayDesc || undefined,
         created_at: new Date().toISOString()
       };
       
