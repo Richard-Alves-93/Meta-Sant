@@ -96,8 +96,8 @@ function CompraFormComponent({
           </div>
         </div>
 
-        {/* Date + Prazo */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Date + Prazo + Valor */}
+        <div className="grid grid-cols-3 gap-2">
           <div>
             <Label htmlFor={`purchase-${index}-date`} className="text-xs font-medium">
               Data da Compra *
@@ -113,7 +113,7 @@ function CompraFormComponent({
 
           <div>
             <Label htmlFor={`purchase-${index}-prazo`} className="text-xs font-medium">
-              Prazo Recompra (dias) *
+              Prazo (dias) *
             </Label>
             <Input
               id={`purchase-${index}-prazo`}
@@ -123,6 +123,22 @@ function CompraFormComponent({
               onChange={(e) => onChange(index, 'prazo_recompra', parseInt(e.target.value) || 1)}
               className="mt-1 h-8"
               placeholder="30"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor={`purchase-${index}-valor`} className="text-xs font-medium">
+              Valor (R$)
+            </Label>
+            <Input
+              id={`purchase-${index}-valor`}
+              type="number"
+              step="0.01"
+              min="0"
+              value={purchase.valor || ''}
+              onChange={(e) => onChange(index, 'valor', parseFloat(e.target.value) || 0)}
+              className="mt-1 h-8"
+              placeholder="0.00"
             />
           </div>
         </div>

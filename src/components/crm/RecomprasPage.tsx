@@ -68,10 +68,10 @@ const RecomprasPage = () => {
     }
 
     const phone = (customer.whatsapp || customer.telefone).replace(/\D/g, '');
-    let template = product?.mensagem_padrao || "Olá {cliente}, a reposição do(a) {produto} do(a) {pet} está próxima! Quer que eu já separe para você?";
+    let template = product?.mensagem_padrao || "Olá {tutor}, a reposição do(a) {produto} do(a) {pet} está próxima! Quer que eu já separe para você?";
     
     template = template
-      .replace('{cliente}', customer.nome)
+      .replace('{tutor}', customer.nome)
       .replace('{pet}', pet?.nome || 'seu pet')
       .replace('{produto}', product?.nome || 'produto');
 
@@ -127,7 +127,7 @@ const RecomprasPage = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-1">Central de Recompras</h1>
-          <p className="text-muted-foreground text-sm">Acompanhe os ciclos de produtos e avise seus clientes na hora certa.</p>
+          <p className="text-muted-foreground text-sm">Acompanhe os ciclos de produtos e avise seus tutores na hora certa.</p>
         </div>
         <button 
           onClick={() => setNovaRecompraModalOpen(true)}

@@ -4,7 +4,7 @@ import {
   fetchCustomers, addCustomer, updateCustomer, deleteCustomer,
   fetchPets, addPet, updatePet, deletePet,
   fetchProducts, addProduct, updateProduct, deleteProduct,
-  findOrCreateProduct, startNewPurchaseCycle
+  findOrCreateProduct, startNewPurchaseCycle, addLancamento
 } from "@/lib/crm-data";
 import { toast } from "sonner";
 
@@ -32,7 +32,7 @@ interface UseCadastrosDataReturn {
   handleSaveCadastroCompleto: (
     tutor: Omit<Customer, 'id'>,
     petsList: Omit<Pet, 'id' | 'customer_id'>[],
-    purchasesList: {petIndex: number, product_id: string, product_name: string, prazo_recompra: number, data_compra: string}[]
+    purchasesList: {petIndex: number, product_id: string, product_name: string, prazo_recompra: number, data_compra: string, valor: number}[]
   ) => Promise<void>;
 
   // UI helpers
@@ -93,10 +93,10 @@ export function useCadastrosData(): UseCadastrosDataReturn {
     try {
       if (editingCliente) {
         await updateCustomer(editingCliente.id, customer);
-        toast.success("Cliente atualizado!");
+        toast.success("Tutor atualizado!");
       } else {
         await addCustomer(customer);
-        toast.success("Cliente criado!");
+        toast.success("Tutor criado!");
       }
       setEditingCliente(null);
       await loadData();
@@ -107,10 +107,10 @@ export function useCadastrosData(): UseCadastrosDataReturn {
   }, [editingCliente, loadData]);
 
   const handleDeleteCliente = useCallback(async (id: string) => {
-    if (!confirm("Tem certeza que deseja remover este cliente? Pets vinculados também serão removidos.")) return;
+    if (!confirm("Tem certeza que deseja remover este tutor? Pets vinculados também serão removidos.")) return;
     try {
       await deleteCustomer(id);
-      toast.success("Cliente removido!");
+      toast.success("Tutor removido!");
       await loadData();
     } catch (error) {
       console.error(error);
@@ -183,7 +183,7 @@ export function useCadastrosData(): UseCadastrosDataReturn {
   const handleSaveCadastroCompleto = useCallback(async (
     tutor: Omit<Customer, 'id'>,
     petsList: Omit<Pet, 'id' | 'customer_id'>[],
-    purchasesList: {petIndex: number, product_id: string, product_name: string, prazo_recompra: number, data_compra: string}[]
+    purchasesList: {petIndex: number, product_id: string, product_name: string, prazo_recompra: number, data_compra: string, valor: number}[]
   ) => {
     try {
       console.log("=== Iniciando cadastro completo ===");
@@ -282,6 +282,14 @@ export function useCadastrosData(): UseCadastrosDataReturn {
         // Salvar ciclo de compra com prazo_recompra explícito
         console.log(`Criando ciclo de compra para pet ${targetPet.nome}...`);
         await startNewPurchaseCycle(targetPet.id, productId, purchase.data_compra, purchase.prazo_recompra);
+        
+        // Registrar o lançamento (venda) se houver valor
+        if (purchase.valor && purchase.valor > 0) {
+          console.log(`Registrando lançamento financeiro de R$ ${purchase.valor}...`);
+          await addLancamento(purchase.data_compra, purchase.valor, 0, newCustomer.id, targetPet.id);
+          console.log(`✓ Lançamento criado`);
+        }
+        
         comprasCount++;
         console.log(`✓ Compra ${i + 1} criada com sucesso`);
       }

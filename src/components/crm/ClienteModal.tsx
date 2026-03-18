@@ -58,7 +58,7 @@ const ClienteModal = ({ open, onClose, onSave, editingCustomer }: ClienteModalPr
       <div className="bg-card w-full max-w-md rounded-xl shadow-lg border border-border overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">
-            {editingCustomer ? "Editar Cliente" : "Novo Cliente"}
+            {editingCustomer ? "Editar Tutor" : "Novo Tutor"}
           </h2>
           <button 
             onClick={onClose}

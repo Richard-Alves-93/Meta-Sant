@@ -70,13 +70,21 @@ export async function deleteMeta(id: string) {
 
 // ---- Lancamento CRUD ----
 
-export async function addLancamento(data: string, valorBruto: number, desconto: number) {
+export async function addLancamento(
+  data: string, 
+  valorBruto: number, 
+  desconto: number,
+  customer_id?: string,
+  pet_id?: string
+) {
   const user = await getAuthUser();
   await supabase.from('lancamentos').insert({
     user_id: user.id,
     data,
     valor_bruto: valorBruto,
     desconto,
+    customer_id: customer_id || null,
+    pet_id: pet_id || null
   });
 }
 

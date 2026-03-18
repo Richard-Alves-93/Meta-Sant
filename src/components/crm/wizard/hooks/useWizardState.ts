@@ -33,6 +33,7 @@ export interface WizardPurchase {
   product_name: string;
   prazo_recompra: number;
   data_compra: string;
+  valor: number;
 }
 
 const INITIAL_TUTOR: WizardTutor = {
@@ -58,7 +59,8 @@ const INITIAL_PURCHASE: WizardPurchase = {
   product_id: '',
   product_name: '',
   prazo_recompra: 30,
-  data_compra: format(new Date(), 'yyyy-MM-dd')
+  data_compra: format(new Date(), 'yyyy-MM-dd'),
+  valor: 0
 };
 
 export function useWizardState(onClose: () => void) {

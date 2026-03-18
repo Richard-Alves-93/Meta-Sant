@@ -15,7 +15,7 @@ const ProdutoModal = ({ open, onClose, onSave, editingProduct }: ProdutoModalPro
   const [categoria, setCategoria] = useState("Ração");
   const [prazoRecompra, setPrazoRecompra] = useState("");
   const [diasAviso, setDiasAviso] = useState("3");
-  const [mensagem, setMensagem] = useState("Olá {cliente}, a reposição do(a) {produto} do(a) {pet} está próxima! Quer que eu já separe para você?");
+  const [mensagem, setMensagem] = useState("Olá {tutor}, a reposição do(a) {produto} do(a) {pet} está próxima! Quer que eu já separe para você?");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ const ProdutoModal = ({ open, onClose, onSave, editingProduct }: ProdutoModalPro
       setCategoria("Ração");
       setPrazoRecompra("");
       setDiasAviso("3");
-      setMensagem("Olá {cliente}, a reposição do(a) {produto} do(a) {pet} está próxima! Quer que eu já separe para você?");
+      setMensagem("Olá {tutor}, a reposição do(a) {produto} do(a) {pet} está próxima! Quer que eu já separe para você?");
     }
   }, [editingProduct, open]);
 
@@ -139,7 +139,7 @@ const ProdutoModal = ({ open, onClose, onSave, editingProduct }: ProdutoModalPro
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Mensagem Padrão (WhatsApp)</label>
-            <p className="text-xs text-muted-foreground">Variáveis: {'{cliente}, {produto}, {pet}'}</p>
+            <p className="text-xs text-muted-foreground">Variáveis: {'{tutor}, {produto}, {pet}'}</p>
             <textarea
               value={mensagem}
               onChange={(e) => setMensagem(e.target.value)}

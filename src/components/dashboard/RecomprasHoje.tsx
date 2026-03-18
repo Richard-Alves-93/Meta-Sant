@@ -40,10 +40,10 @@ const RecomprasHoje = ({ onNavigateToRecompras }: RecomprasHojeProps) => {
     }
 
     const phone = (customer.whatsapp || customer.telefone).replace(/\D/g, '');
-    let template = product?.mensagem_padrao || "Olá {cliente}, a reposição do(a) {produto} do(a) {pet} está próxima! Quer que eu já separe para você?";
+    let template = product?.mensagem_padrao || "Olá {tutor}, a reposição do(a) {produto} do(a) {pet} está próxima! Quer que eu já separe para você?";
     
     template = template
-      .replace('{cliente}', customer.nome)
+      .replace('{tutor}', customer.nome)
       .replace('{pet}', pet?.nome || 'seu pet')
       .replace('{produto}', product?.nome || 'produto');
 

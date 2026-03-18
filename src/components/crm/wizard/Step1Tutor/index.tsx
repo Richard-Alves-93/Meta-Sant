@@ -23,7 +23,7 @@ export function Step1Tutor({ tutor, onTutorChange }: Step1TutorProps) {
         </div>
         <div>
           <h3 className="text-lg font-semibold">Dados do Tutor</h3>
-          <p className="text-sm text-muted-foreground">Informações básicas do cliente</p>
+          <p className="text-sm text-muted-foreground">Informações básicas do tutor</p>
         </div>
       </div>
 

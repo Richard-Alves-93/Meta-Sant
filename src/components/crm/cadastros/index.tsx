@@ -40,14 +40,14 @@ const CadastrosPage = () => {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-1">Cadastros</h1>
-        <p className="text-muted-foreground text-sm">Gerencie clientes, pets e produtos recorrentes</p>
+        <p className="text-muted-foreground text-sm">Gerencie tutores, pets e produtos recorrentes</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 max-w-2xl bg-secondary/50 p-1">
           <TabsTrigger value="clientes" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm flex gap-2">
             <Users size={16} />
-            <span className="hidden sm:inline">Clientes</span>
+            <span className="hidden sm:inline">Tutores</span>
           </TabsTrigger>
           <TabsTrigger value="pets" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm flex gap-2">
             <PawPrint size={16} />

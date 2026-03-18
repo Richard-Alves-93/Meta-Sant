@@ -30,7 +30,7 @@ export function ClientesTable({ customers, loading, onEdit, onDelete }: Clientes
           {customers.length === 0 ? (
             <tr>
               <td colSpan={4} className="text-center py-8 text-muted-foreground text-sm">
-                {loading ? "Carregando..." : "Nenhum cliente cadastrado"}
+                {loading ? "Carregando..." : "Nenhum tutor cadastrado"}
               </td>
             </tr>
           ) : (
@@ -43,14 +43,14 @@ export function ClientesTable({ customers, loading, onEdit, onDelete }: Clientes
                   <button
                     onClick={() => onEdit(c)}
                     className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors mr-2"
-                    title="Editar cliente"
+                    title="Editar tutor"
                   >
                     <Edit2 size={16} />
                   </button>
                   <button
                     onClick={() => onDelete(c.id)}
                     className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-                    title="Deletar cliente"
+                    title="Deletar tutor"
                   >
                     <Trash2 size={16} />
                   </button>
