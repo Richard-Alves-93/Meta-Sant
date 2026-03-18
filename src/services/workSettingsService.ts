@@ -71,19 +71,8 @@ export function salvarFeriados(lista: CustomHoliday[]) {
 
 // Deprecated (Kept for backwards compatibility but not used or relies on local fallback)
 export async function getWorkSettings(): Promise<WorkSettings | null> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  try {
-    const { data } = await supabase
-      .from('work_settings')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-    return data as WorkSettings | null;
-  } catch (e) {
-    return null;
-  }
+  // work_settings table doesn't exist in schema, return null
+  return null;
 }
 
 export async function getRemainingWorkingDays(fromDate?: Date): Promise<number> {
