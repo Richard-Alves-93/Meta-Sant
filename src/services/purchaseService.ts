@@ -182,11 +182,14 @@ export async function registerRepurchase(purchaseId: string, newProductId: strin
       },
       rollback: async () => {
         // Revert status back to 'Ativo'
-        await supabase
-          .from('pet_purchases')
-          .update({ status: 'Ativo' })
-          .eq('id', purchaseId)
-          .catch(err => console.error('[CRM] Rollback error on status revert:', err));
+        try {
+          await supabase
+            .from('pet_purchases')
+            .update({ status: 'Ativo' })
+            .eq('id', purchaseId);
+        } catch (err) {
+          console.error('[CRM] Rollback error on status revert:', err);
+        }
       }
     },
     {

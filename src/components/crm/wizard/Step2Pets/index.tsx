@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { WizardPet } from "../../hooks/useWizardState";
+import { WizardPet } from "../hooks/useWizardState";
 import { PetForm } from "./PetForm";
 import { Plus, PawPrint } from "lucide-react";
 

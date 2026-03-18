@@ -123,45 +123,13 @@ export async function getRemainingWorkingDays(fromDate?: Date): Promise<number> 
 }
 
 export async function saveWorkSettings(workMode: WorkMode, customSchedule?: Record<string, boolean>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-
-  try {
-    // First try to update existing settings
-    const { data: existing, error: fetchError } = await supabase
-      .from('work_settings')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!fetchError && existing) {
-      // Update existing record
-      const { error: updateError } = await supabase
-        .from('work_settings')
-        .update({
-          work_mode: workMode,
-          custom_schedule_json: customSchedule || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
-
-      if (updateError) throw updateError;
-    } else {
-      // Insert new record
-      const { error: insertError } = await supabase
-        .from('work_settings')
-        .insert({
-          user_id: user.id,
-          work_mode: workMode,
-          custom_schedule_json: customSchedule || null,
-        });
-
-      if (insertError) throw insertError;
-    }
-  } catch (error) {
-    console.error('Error saving work settings:', error);
-    throw error;
-  }
+  // work_settings table doesn't exist in schema, save to localStorage
+  const jornada = {
+    modo: workMode,
+    diasSelecionados: customSchedule ? Object.entries(customSchedule).filter(([_, v]) => v).map(([k]) => parseInt(k)) : [1, 2, 3, 4, 5],
+    usarFeriados: true
+  };
+  salvarJornada(jornada);
 }
 
 export async function addCustomHoliday(data: string, descricao?: string) {

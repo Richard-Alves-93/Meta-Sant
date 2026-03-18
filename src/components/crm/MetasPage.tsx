@@ -1,7 +1,7 @@
 import { CrmDatabase, getLancamentosDoMes, formatCurrency, getDiasMes, calcularVendasNecessarias, Meta, Lancamento } from "@/lib/crm-data";
 import KpiCard from "./KpiCard";
 import MetaCard from "./MetaCard";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { DollarSign, Activity, TrendingUp, MessageCircle } from "lucide-react";
 
 interface MetasPageProps {
@@ -17,24 +17,24 @@ const MetasPage = ({ db, onAdd, onEdit, onDelete }: MetasPageProps) => {
   const mediaDiaria = lancamentosMes.length > 0 ? totalLiquido / lancamentosMes.length : 0;
   const projecao = mediaDiaria * getDiasMes();
 
-  const handleShareAllMetas = () => {
+  const handleShareAllMetas = useCallback(async () => {
     if (db.metas.length === 0) return;
     
     let text = `🎯 *Resumo Diário das Metas*\n\n`;
     
-    db.metas.forEach(meta => {
-      const calc = calcularVendasNecessarias(meta, lancamentosMes);
+    for (const meta of db.metas) {
+      const calc = await calcularVendasNecessarias(meta, lancamentosMes);
       text += `📌 *${meta.nome}*\n`;
       text += `💰 Objetivo: ${formatCurrency(meta.valor)}\n`;
       text += `✅ Vendido: ${formatCurrency(calc.totalVendido)} (${Math.round(calc.percentual)}%)\n`;
       text += `⏳ Faltam: ${formatCurrency(calc.vendasRestantes)}\n`;
       text += `📅 Necessário/dia: ${formatCurrency(calc.vendasNecessarias)}\n`;
       text += `${calc.metaBatida ? "🎉 Meta batida! 🚀" : "💪 Foco na meta!"}\n\n`;
-    });
+    }
 
     const url = `https://wa.me/?text=${encodeURIComponent(text.trim())}`;
     window.open(url, '_blank');
-  };
+  }, [db.metas, lancamentosMes]);
 
   return (
     <div>
