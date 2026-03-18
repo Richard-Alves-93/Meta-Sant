@@ -9,14 +9,14 @@ import { getAuthUser } from "@/services/authService";
 import type { Customer } from "@/lib/types";
 
 export async function fetchCustomers(): Promise<Customer[]> {
-  const { data, error } = await supabase.from('customers').select('*').neq('ativo', false).order('nome');
+  const { data, error } = await supabase.from('customers').select('*').eq('ativo', true).order('nome');
   if (error) throw error;
   return data as Customer[];
 }
 
 export async function addCustomer(customer: Omit<Customer, 'id'>): Promise<Customer> {
   const user = await getAuthUser();
-  const { data, error } = await supabase.from('customers').insert({ ...customer, user_id: user.id } as any).select().single();
+  const { data, error } = await supabase.from('customers').insert({ ...customer, ativo: true, user_id: user.id } as any).select().single();
   if (error) throw handleSupabaseError(error, 'addCustomer');
   return data as Customer;
 }

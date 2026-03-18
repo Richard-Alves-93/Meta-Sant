@@ -9,13 +9,13 @@ import { getAuthUser } from "@/services/authService";
 import type { Pet } from "@/lib/types";
 
 export async function fetchPets(): Promise<Pet[]> {
-  const { data, error } = await supabase.from('pets').select('*').neq('ativo', false).order('nome');
+  const { data, error } = await supabase.from('pets').select('*').eq('ativo', true).order('nome');
   if (error) throw error;
   return data as Pet[];
 }
 
 export async function fetchPetsByCustomer(customerId: string): Promise<Pet[]> {
-  const { data, error } = await supabase.from('pets').select('*').eq('customer_id', customerId).neq('ativo', false).order('nome');
+  const { data, error } = await supabase.from('pets').select('*').eq('customer_id', customerId).eq('ativo', true).order('nome');
   if (error) throw error;
   return data as Pet[];
 }
@@ -27,6 +27,7 @@ export async function addPet(pet: Omit<Pet, 'id'>): Promise<Pet> {
   const sanitizedPet = {
     ...pet,
     data_aniversario: pet.data_aniversario?.trim() ? pet.data_aniversario : null,
+    ativo: true,
     user_id: user.id
   };
 

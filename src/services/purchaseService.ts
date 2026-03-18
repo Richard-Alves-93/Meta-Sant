@@ -17,7 +17,7 @@ export async function fetchPetPurchases(): Promise<PetPurchase[]> {
       pet:pets(*),
       product:products(*)
     `)
-    .neq('ativo', false)
+    .eq('ativo', true)
     .order('proxima_data', { ascending: true });
   if (error) throw error;
   return data as PetPurchase[];
@@ -34,7 +34,7 @@ export async function addPetPurchase(purchase: Omit<PetPurchase, 'id' | 'pet' | 
     data_lembrete = prox.toISOString().split('T')[0];
   }
 
-  const { error } = await supabase.from('pet_purchases').insert({ ...purchase, data_lembrete, user_id: user.id } as any);
+  const { error } = await supabase.from('pet_purchases').insert({ ...purchase, data_lembrete, ativo: true, user_id: user.id } as any);
   if (error) throw handleSupabaseError(error, 'addPetPurchase');
 }
 
@@ -70,7 +70,7 @@ export async function fetchPurchases(filters?: { status?: PetPurchaseStatus }): 
       pet:pets(*, customer:customers(*)),
       product:products(*)
     `)
-    .neq('ativo', false)
+    .eq('ativo', true)
     .order('proxima_data', { ascending: true });
 
   if (filters?.status) {
@@ -219,6 +219,7 @@ export async function registerRepurchase(purchaseId: string, newProductId: strin
             dias_aviso_previo: stepResults.newProduct!.dias_aviso_previo,
             data_lembrete: dataLembrete.toISOString().split('T')[0],
             status: 'Ativo',
+            ativo: true,
             purchase_history_id: purchaseId
           })
           .select()
@@ -280,6 +281,7 @@ export async function startNewPurchaseCycle(petId: string, productId: string, da
     dias_aviso_previo: product.dias_aviso_previo,
     data_lembrete: dataLembrete.toISOString().split('T')[0],
     status: 'Ativo',
+    ativo: true,
     purchase_history_id: null
   });
 
