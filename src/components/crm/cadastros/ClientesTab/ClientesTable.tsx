@@ -15,6 +15,8 @@ interface ClientesTableProps {
  */
 
 export function ClientesTable({ customers, loading, onEdit, onDelete }: ClientesTableProps) {
+  const activeCustomers = customers.filter(c => c.ativo !== false);
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
@@ -27,14 +29,14 @@ export function ClientesTable({ customers, loading, onEdit, onDelete }: Clientes
           </tr>
         </thead>
         <tbody>
-          {customers.length === 0 ? (
+          {activeCustomers.length === 0 ? (
             <tr>
               <td colSpan={4} className="text-center py-8 text-muted-foreground text-sm">
                 {loading ? "Carregando..." : "Nenhum tutor cadastrado"}
               </td>
             </tr>
           ) : (
-            customers.map(c => (
+            activeCustomers.map(c => (
               <tr key={c.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
                 <td className="py-3 px-4 text-sm font-medium">{c.nome}</td>
                 <td className="py-3 px-4 text-sm">{c.whatsapp || c.telefone || '-'}</td>

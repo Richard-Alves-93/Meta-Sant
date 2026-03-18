@@ -9,13 +9,13 @@ import { getAuthUser } from "@/services/authService";
 import type { Pet } from "@/lib/types";
 
 export async function fetchPets(): Promise<Pet[]> {
-  const { data, error } = await supabase.from('pets').select('*').order('nome');
+  const { data, error } = await supabase.from('pets').select('*').neq('ativo', false).order('nome');
   if (error) throw error;
   return data as Pet[];
 }
 
 export async function fetchPetsByCustomer(customerId: string): Promise<Pet[]> {
-  const { data, error } = await supabase.from('pets').select('*').eq('customer_id', customerId).order('nome');
+  const { data, error } = await supabase.from('pets').select('*').eq('customer_id', customerId).neq('ativo', false).order('nome');
   if (error) throw error;
   return data as Pet[];
 }
@@ -54,24 +54,13 @@ export async function updatePet(id: string, pet: Partial<Omit<Pet, 'id'>>) {
 }
 
 export async function deletePet(id: string) {
-  // Validate cascade - ensure no purchase records exist for this pet
-  await validateCanDelete(
-    'pets',
-    id,
-    async () => {
-      const { count, error } = await supabase
-        .from('pet_purchases')
-        .select('*', { count: 'exact', head: true })
-        .eq('pet_id', id);
-      if (error) throw error;
-      return count || 0;
-    }
-  );
-
-  // If validation passes, proceed with deletion
   return withErrorHandler(
     async () => {
-      const { error } = await supabase.from('pets').delete().eq('id', id);
+      // Cascade soft delete: Pet Purchases
+      await supabase.from('pet_purchases').update({ ativo: false } as any).eq('pet_id', id);
+      
+      // Inactivate the pet
+      const { error } = await supabase.from('pets').update({ ativo: false } as any).eq('id', id);
       if (error) throw handleSupabaseError(error, 'deletePet');
     },
     'deletePet',

@@ -16,10 +16,10 @@ export interface Lancamento {
   data: string;
   valorBruto: number;
   desconto: number;
-  valorLiquido: number;
   customer_id?: string | null;
   pet_id?: string | null;
   categoria?: string | null;
+  ativo?: boolean;
 }
 
 export interface Customer {
@@ -29,6 +29,7 @@ export interface Customer {
   whatsapp: string | null;
   email: string | null;
   observacoes: string | null;
+  ativo?: boolean;
 }
 
 export interface Pet {
@@ -41,6 +42,7 @@ export interface Pet {
   sexo: string | null;
   porte: string | null;
   peso: number | null;
+  ativo?: boolean;
 }
 
 export interface Product {
@@ -50,6 +52,7 @@ export interface Product {
   prazo_recompra_dias: number;
   dias_aviso_previo: number;
   mensagem_padrao: string | null;
+  ativo?: boolean;
 }
 
 export type PetPurchaseStatus = 'Ativo' | 'Avisar em breve' | 'Avisar hoje' | 'Notificado' | 'Recompra registrada' | 'Trocado' | 'Vencido' | 'Cancelado';
@@ -65,6 +68,7 @@ export interface PetPurchase {
   data_lembrete: string;
   status: PetPurchaseStatus;
   purchase_history_id: string | null;
+  ativo?: boolean;
 
   // Relations for joining data
   pet?: Pet;

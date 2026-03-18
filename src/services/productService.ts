@@ -9,7 +9,7 @@ import { getAuthUser } from "@/services/authService";
 import type { Product } from "@/lib/types";
 
 export async function fetchProducts(): Promise<Product[]> {
-  const { data, error } = await supabase.from('products').select('*').order('nome');
+  const { data, error } = await supabase.from('products').select('*').neq('ativo', false).order('nome');
   if (error) throw error;
   return data as Product[];
 }
@@ -62,7 +62,11 @@ export async function updateProduct(id: string, product: Partial<Omit<Product, '
 export async function deleteProduct(id: string) {
   return withErrorHandler(
     async () => {
-      const { error } = await supabase.from('products').delete().eq('id', id);
+      // Cascade soft delete: Pet Purchases
+      await supabase.from('pet_purchases').update({ ativo: false } as any).eq('product_id', id);
+      
+      // Inactivate the product
+      const { error } = await supabase.from('products').update({ ativo: false } as any).eq('id', id);
       if (error) throw handleSupabaseError(error, 'deleteProduct');
     },
     'deleteProduct',

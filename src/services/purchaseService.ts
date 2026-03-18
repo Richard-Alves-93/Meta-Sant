@@ -17,6 +17,7 @@ export async function fetchPetPurchases(): Promise<PetPurchase[]> {
       pet:pets(*),
       product:products(*)
     `)
+    .neq('ativo', false)
     .order('proxima_data', { ascending: true });
   if (error) throw error;
   return data as PetPurchase[];
@@ -33,7 +34,7 @@ export async function addPetPurchase(purchase: Omit<PetPurchase, 'id' | 'pet' | 
     data_lembrete = prox.toISOString().split('T')[0];
   }
 
-  const { error } = await supabase.from('pet_purchases').insert({ ...purchase, data_lembrete, user_id: user.id });
+  const { error } = await supabase.from('pet_purchases').insert({ ...purchase, data_lembrete, user_id: user.id } as any);
   if (error) throw handleSupabaseError(error, 'addPetPurchase');
 }
 
@@ -52,7 +53,7 @@ export async function updatePetPurchase(id: string, purchase: Partial<Omit<PetPu
 export async function deletePetPurchase(id: string) {
   return withErrorHandler(
     async () => {
-      const { error } = await supabase.from('pet_purchases').delete().eq('id', id);
+      const { error } = await supabase.from('pet_purchases').update({ ativo: false } as any).eq('id', id);
       if (error) throw handleSupabaseError(error, 'deletePetPurchase');
     },
     'deletePetPurchase',
@@ -69,6 +70,7 @@ export async function fetchPurchases(filters?: { status?: PetPurchaseStatus }): 
       pet:pets(*, customer:customers(*)),
       product:products(*)
     `)
+    .neq('ativo', false)
     .order('proxima_data', { ascending: true });
 
   if (filters?.status) {

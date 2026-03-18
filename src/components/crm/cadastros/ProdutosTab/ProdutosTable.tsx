@@ -15,6 +15,8 @@ interface ProdutosTableProps {
  */
 
 export function ProdutosTable({ products, loading, onEdit, onDelete }: ProdutosTableProps) {
+  const activeProducts = products.filter(p => p.ativo !== false);
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
@@ -28,14 +30,14 @@ export function ProdutosTable({ products, loading, onEdit, onDelete }: ProdutosT
           </tr>
         </thead>
         <tbody>
-          {products.length === 0 ? (
+          {activeProducts.length === 0 ? (
             <tr>
               <td colSpan={5} className="text-center py-8 text-muted-foreground text-sm">
                 {loading ? "Carregando..." : "Nenhum produto cadastrado"}
               </td>
             </tr>
           ) : (
-            products.map(p => (
+            activeProducts.map(p => (
               <tr key={p.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
                 <td className="py-3 px-4 text-sm font-medium">{p.nome}</td>
                 <td className="py-3 px-4 text-sm">

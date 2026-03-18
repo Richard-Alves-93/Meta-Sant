@@ -17,6 +17,7 @@ interface PetsTableProps {
 
 export function PetsTable({ pets, customers, loading, onEdit, onDelete }: PetsTableProps) {
   const getCustomerName = (id: string) => customers.find(c => c.id === id)?.nome || "Desconhecido";
+  const activePets = pets.filter(p => p.ativo !== false);
 
   return (
     <div className="overflow-x-auto">
@@ -30,14 +31,14 @@ export function PetsTable({ pets, customers, loading, onEdit, onDelete }: PetsTa
           </tr>
         </thead>
         <tbody>
-          {pets.length === 0 ? (
+          {activePets.length === 0 ? (
             <tr>
               <td colSpan={4} className="text-center py-8 text-muted-foreground text-sm">
                 {loading ? "Carregando..." : "Nenhum pet cadastrado"}
               </td>
             </tr>
           ) : (
-            pets.map(p => (
+            activePets.map(p => (
               <tr key={p.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
                 <td className="py-3 px-4 text-sm font-medium">{p.nome}</td>
                 <td className="py-3 px-4 text-sm">{getCustomerName(p.customer_id)}</td>

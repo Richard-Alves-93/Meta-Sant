@@ -110,13 +110,18 @@ export function useCadastrosData(): UseCadastrosDataReturn {
     if (!confirm("Tem certeza que deseja remover este tutor? Pets vinculados também serão removidos.")) return;
     try {
       await deleteCustomer(id);
+      
+      // Atualização de estado usando um novo array (map marcando inativo)
+      setCustomers(prev => prev.map(c => c.id === id ? { ...c, ativo: false } : c));
+      setPets(prev => prev.map(p => p.customer_id === id ? { ...p, ativo: false } : p));
+      
       toast.success("Tutor removido!");
-      await loadData();
+      // Nao usar loadData aqui para uma experiencia instantanea sem recarregamento
     } catch (error) {
       console.error(error);
       toast.error("Erro ao remover cliente.");
     }
-  }, [loadData]);
+  }, []);
 
   // ---- Handlers: Pets ----
   const handleSavePet = useCallback(async (pet: Omit<Pet, 'id'>) => {
@@ -141,13 +146,16 @@ export function useCadastrosData(): UseCadastrosDataReturn {
     if (!confirm("Tem certeza que deseja remover este pet?")) return;
     try {
       await deletePet(id);
+      
+      // Atualização com novo array mapeado
+      setPets(prev => prev.map(p => p.id === id ? { ...p, ativo: false } : p));
+      
       toast.success("Pet removido!");
-      await loadData();
     } catch (error) {
       console.error(error);
       toast.error("Erro ao remover pet.");
     }
-  }, [loadData]);
+  }, []);
 
   // ---- Handlers: Produtos ----
   const handleSaveProduto = useCallback(async (product: Omit<Product, 'id'>) => {
@@ -171,13 +179,16 @@ export function useCadastrosData(): UseCadastrosDataReturn {
     if (!confirm("Tem certeza que deseja remover este produto? O histórico de compras será mantido, mas não será possível vinculá-lo a novas.")) return;
     try {
       await deleteProduct(id);
+      
+      // Atualização de estado limpa usando map
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, ativo: false } : p));
+      
       toast.success("Produto removido!");
-      await loadData();
     } catch (error) {
       console.error(error);
       toast.error("Erro ao remover produto.");
     }
-  }, [loadData]);
+  }, []);
 
   // ---- Handler: Cadastro Completo ----
   const handleSaveCadastroCompleto = useCallback(async (
