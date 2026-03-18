@@ -16,6 +16,7 @@ const NovaRecompraModal = ({ open, onClose, onSave }: NovaRecompraModalProps) =>
 
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [selectedPetId, setSelectedPetId] = useState("");
+  const [selectedCategoria, setSelectedCategoria] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
   const [dataCompra, setDataCompra] = useState(() => formatISODate(new Date()));
   const [prazoRecompra, setPrazoRecompra] = useState<number>(30);
@@ -32,6 +33,7 @@ const NovaRecompraModal = ({ open, onClose, onSave }: NovaRecompraModalProps) =>
       // Reset state
       setSelectedCustomerId("");
       setSelectedPetId("");
+      setSelectedCategoria("");
       setSelectedProductId("");
       setDataCompra(formatISODate(new Date()));
       setPrazoRecompra(30);
@@ -104,6 +106,7 @@ const NovaRecompraModal = ({ open, onClose, onSave }: NovaRecompraModalProps) =>
   };
 
   const filteredPets = pets.filter(p => !selectedCustomerId || p.customer_id === selectedCustomerId);
+  const filteredProducts = products.filter(p => !selectedCategoria || p.categoria === selectedCategoria);
   const { proximaData, dataLembrete } = calculateDates();
 
   if (!open) return null;
@@ -161,6 +164,28 @@ const NovaRecompraModal = ({ open, onClose, onSave }: NovaRecompraModalProps) =>
           </div>
 
           <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Categoria do Produto</label>
+            <select
+              value={selectedCategoria}
+              onChange={(e) => {
+                setSelectedCategoria(e.target.value);
+                setSelectedProductId(""); // Reset product when category changes
+              }}
+              className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="">Todas as Categorias</option>
+              <option value="Antipulgas">Antipulgas</option>
+              <option value="Vacina">Vacina</option>
+              <option value="Ração">Ração</option>
+              <option value="Vermífugo">Vermífugo</option>
+              <option value="Higiene">Higiene</option>
+              <option value="Medicamento">Medicamento</option>
+              <option value="Estética">Estética</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Produto Adquirido *</label>
             <select
               value={selectedProductId}
@@ -168,7 +193,7 @@ const NovaRecompraModal = ({ open, onClose, onSave }: NovaRecompraModalProps) =>
               className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="">Selecione o produto</option>
-              {products.map(p => (
+              {filteredProducts.map(p => (
                 <option key={p.id} value={p.id}>
                   {p.nome} (Ciclo de {p.prazo_recompra_dias} dias)
                 </option>

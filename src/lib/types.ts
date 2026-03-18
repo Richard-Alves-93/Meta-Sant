@@ -19,6 +19,7 @@ export interface Lancamento {
   valorLiquido: number;
   customer_id?: string | null;
   pet_id?: string | null;
+  categoria?: string | null;
 }
 
 export interface Customer {

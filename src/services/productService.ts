@@ -21,7 +21,7 @@ export async function addProduct(product: Omit<Product, 'id'>): Promise<Product>
   return data as Product;
 }
 
-export async function findOrCreateProduct(productName: string): Promise<Product> {
+export async function findOrCreateProduct(productName: string, categoria?: string | null): Promise<Product> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
@@ -40,7 +40,7 @@ export async function findOrCreateProduct(productName: string): Promise<Product>
   // Create new product with defaults
   return addProduct({
     nome: productName,
-    categoria: null,
+    categoria: categoria || null,
     prazo_recompra_dias: 30,
     dias_aviso_previo: 3,
     mensagem_padrao: null,

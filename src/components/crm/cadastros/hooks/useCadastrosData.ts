@@ -32,7 +32,7 @@ interface UseCadastrosDataReturn {
   handleSaveCadastroCompleto: (
     tutor: Omit<Customer, 'id'>,
     petsList: Omit<Pet, 'id' | 'customer_id'>[],
-    purchasesList: {petIndex: number, product_id: string, product_name: string, prazo_recompra: number, data_compra: string, valor: number}[]
+    purchasesList: {petIndex: number, product_id: string, product_name: string, categoria: string, prazo_recompra: number, data_compra: string, valor: number}[]
   ) => Promise<void>;
 
   // UI helpers
@@ -183,7 +183,7 @@ export function useCadastrosData(): UseCadastrosDataReturn {
   const handleSaveCadastroCompleto = useCallback(async (
     tutor: Omit<Customer, 'id'>,
     petsList: Omit<Pet, 'id' | 'customer_id'>[],
-    purchasesList: {petIndex: number, product_id: string, product_name: string, prazo_recompra: number, data_compra: string, valor: number}[]
+    purchasesList: {petIndex: number, product_id: string, product_name: string, categoria: string, prazo_recompra: number, data_compra: string, valor: number}[]
   ) => {
     try {
       console.log("=== Iniciando cadastro completo ===");
@@ -271,7 +271,7 @@ export function useCadastrosData(): UseCadastrosDataReturn {
             throw new Error(`Compra ${i + 1}: Produto não informado`);
           }
           console.log(`Procurando/criando produto: ${productName}...`);
-          const product = await findOrCreateProduct(productName.trim());
+          const product = await findOrCreateProduct(productName.trim(), purchase.categoria || null);
           if (!product || !product.id) {
             throw new Error(`Falha ao criar/encontrar produto "${productName}"`);
           }
@@ -286,7 +286,7 @@ export function useCadastrosData(): UseCadastrosDataReturn {
         // Registrar o lançamento (venda) se houver valor
         if (purchase.valor && purchase.valor > 0) {
           console.log(`Registrando lançamento financeiro de R$ ${purchase.valor}...`);
-          await addLancamento(purchase.data_compra, purchase.valor, 0, newCustomer.id, targetPet.id);
+          await addLancamento(purchase.data_compra, purchase.valor, 0, newCustomer.id, targetPet.id, purchase.categoria || null);
           console.log(`✓ Lançamento criado`);
         }
         

@@ -117,9 +117,12 @@ const ProdutoModal = ({ open, onClose, onSave, editingProduct }: ProdutoModalPro
               className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="Ração">Ração</option>
+              <option value="Antipulgas">Antipulgas</option>
+              <option value="Vacina">Vacina</option>
+              <option value="Vermífugo">Vermífugo</option>
+              <option value="Higiene">Higiene</option>
               <option value="Medicamento">Medicamento</option>
               <option value="Estética">Estética</option>
-              <option value="Antipulgas">Antipulgas</option>
               <option value="Outros">Outros</option>
             </select>
           </div>

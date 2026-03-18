@@ -43,6 +43,8 @@ function CompraFormComponent({
     }
   };
 
+  const filteredProducts = products.filter(p => !purchase.categoria || p.categoria === purchase.categoria);
+
   return (
     <div className="border border-border/50 rounded-lg p-4 bg-secondary/20">
       <div className="flex justify-between items-start mb-4">
@@ -81,6 +83,32 @@ function CompraFormComponent({
           </Select>
         </div>
 
+        {/* Category Selection */}
+        <div>
+          <Label htmlFor={`purchase-${index}-category`} className="text-xs font-medium">
+            Selecione a Categoria
+          </Label>
+          <Select
+            value={purchase.categoria || "Todas"}
+            onValueChange={(v) => onChange(index, 'categoria', v === "Todas" ? "" : v)}
+          >
+            <SelectTrigger id={`purchase-${index}-category`} className="mt-1 h-8">
+              <SelectValue placeholder="Todas as Categorias" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Todas">Todas as Categorias</SelectItem>
+              <SelectItem value="Antipulgas">Antipulgas</SelectItem>
+              <SelectItem value="Vacina">Vacina</SelectItem>
+              <SelectItem value="Ração">Ração</SelectItem>
+              <SelectItem value="Vermífugo">Vermífugo</SelectItem>
+              <SelectItem value="Higiene">Higiene</SelectItem>
+              <SelectItem value="Medicamento">Medicamento</SelectItem>
+              <SelectItem value="Estética">Estética</SelectItem>
+              <SelectItem value="Outros">Outros</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Product Selection + Auto-fill prazo */}
         <div>
           <Label htmlFor={`purchase-${index}-product`} className="text-xs font-medium">
@@ -88,7 +116,7 @@ function CompraFormComponent({
           </Label>
           <div className="mt-1">
             <ProductCombobox
-              products={products}
+              products={filteredProducts}
               selectedProductId={purchase.product_id}
               productName={purchase.product_name}
               onSelect={handleProductSelect}

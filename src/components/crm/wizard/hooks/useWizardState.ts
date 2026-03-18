@@ -31,6 +31,7 @@ export interface WizardPurchase {
   petIndex: number;
   product_id: string;
   product_name: string;
+  categoria: string;
   prazo_recompra: number;
   data_compra: string;
   valor: number;
@@ -58,6 +59,7 @@ const INITIAL_PURCHASE: WizardPurchase = {
   petIndex: 0,
   product_id: '',
   product_name: '',
+  categoria: '',
   prazo_recompra: 30,
   data_compra: format(new Date(), 'yyyy-MM-dd'),
   valor: 0
