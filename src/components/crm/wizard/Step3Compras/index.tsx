@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { WizardPurchase, WizardPet } from "../../hooks/useWizardState";
+import { WizardPurchase, WizardPet } from "../hooks/useWizardState";
 import { Product } from "@/lib/crm-data";
 import { CompraForm } from "./CompraForm";
 import { Plus, Package } from "lucide-react";

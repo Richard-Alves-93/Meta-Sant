@@ -19,7 +19,8 @@ export function usePurchasesForm(
       product_id: '',
       product_name: '',
       prazo_recompra: 30,
-      data_compra: format(new Date(), 'yyyy-MM-dd')
+      data_compra: format(new Date(), 'yyyy-MM-dd'),
+      valor: 0
     };
     setPurchases([...purchases, newPurchase]);
   }, [purchases, setPurchases]);
