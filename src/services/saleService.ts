@@ -74,23 +74,32 @@ export async function deleteMeta(id: string) {
 // ---- Lancamento CRUD ----
 
 export async function addLancamento(
-  data: string, 
-  valorBruto: number, 
+  data: string,
+  valorBruto: number,
   desconto: number,
   customer_id?: string,
   pet_id?: string,
   categoria?: string | null
 ) {
   const user = await getAuthUser();
-  await supabase.from('lancamentos').insert({
-    user_id: user.id,
-    data,
-    valor_bruto: valorBruto,
-    desconto,
-    customer_id: customer_id || null,
-    pet_id: pet_id || null,
-    categoria: categoria || null
-  });
+  return withErrorHandler(
+    async () => {
+      const { error } = await supabase.from('lancamentos').insert({
+        user_id: user.id,
+        data,
+        valor_bruto: valorBruto,
+        desconto,
+        customer_id: customer_id || null,
+        pet_id: pet_id || null,
+        categoria: categoria || null
+      });
+
+      if (error) throw handleSupabaseError(error, 'addLancamento');
+    },
+    'addLancamento',
+    undefined,
+    { data, valorBruto, desconto }
+  );
 }
 
 export async function updateLancamento(id: string, data: string, valorBruto: number, desconto: number) {
