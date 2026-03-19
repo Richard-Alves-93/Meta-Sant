@@ -291,16 +291,10 @@ export function useCadastrosData(): UseCadastrosDataReturn {
         }
 
         // Salvar ciclo de compra com prazo_recompra explícito
+        // (Não registramos lançamentos financeiros aqui; faturamento é controlado diariamente)
         console.log(`Criando ciclo de compra para pet ${targetPet.nome}...`);
         await startNewPurchaseCycle(targetPet.id, productId, purchase.data_compra, purchase.prazo_recompra);
-        
-        // Registrar o lançamento (venda) se houver valor
-        if (purchase.valor && purchase.valor > 0) {
-          console.log(`Registrando lançamento financeiro de R$ ${purchase.valor}...`);
-          await addLancamento(purchase.data_compra, purchase.valor, 0);
-          console.log(`✓ Lançamento criado`);
-        }
-        
+
         comprasCount++;
         console.log(`✓ Compra ${i + 1} criada com sucesso`);
       }
