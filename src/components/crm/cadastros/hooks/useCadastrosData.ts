@@ -297,7 +297,7 @@ export function useCadastrosData(): UseCadastrosDataReturn {
         // Registrar o lançamento (venda) se houver valor
         if (purchase.valor && purchase.valor > 0) {
           console.log(`Registrando lançamento financeiro de R$ ${purchase.valor}...`);
-          await addLancamento(purchase.data_compra, purchase.valor, 0, newCustomer.id, targetPet.id, purchase.categoria || null);
+          await addLancamento(purchase.data_compra, purchase.valor, 0);
           console.log(`✓ Lançamento criado`);
         }
         

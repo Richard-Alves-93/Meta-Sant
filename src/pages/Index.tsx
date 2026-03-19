@@ -89,9 +89,10 @@ const Index = () => {
       setLancModalOpen(false);
       setEditingLanc(null);
       toast.success(editingLanc ? "Lançamento atualizado!" : "Lançamento salvo!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao salvar lançamento:", error);
-      toast.error("Ocorreu um erro ao salvar o lançamento. Tente novamente.");
+      const message = error?.userMessage || error?.message || "Ocorreu um erro ao salvar o lançamento.";
+      toast.error(message);
     }
   };
 
@@ -100,9 +101,10 @@ const Index = () => {
       await addLancamento(data, bruto, desconto);
       await refresh();
       toast.success("Lançamento salvo!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao salvar lançamento:", error);
-      toast.error("Ocorreu um erro ao salvar o lançamento. Tente novamente.");
+      const message = error?.userMessage || error?.message || "Ocorreu um erro ao salvar o lançamento.";
+      toast.error(message);
     }
   };
 

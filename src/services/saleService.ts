@@ -32,9 +32,6 @@ export async function fetchDatabase(): Promise<CrmDatabase> {
     valorBruto: Number(l.valor_bruto),
     desconto: Number(l.desconto),
     valorLiquido: Number(l.valor_liquido),
-    categoria: (l as any).categoria,
-    customer_id: (l as any).customer_id,
-    pet_id: (l as any).pet_id
   }));
 
   return { metas, lancamentos };
@@ -76,10 +73,7 @@ export async function deleteMeta(id: string) {
 export async function addLancamento(
   data: string,
   valorBruto: number,
-  desconto: number,
-  customer_id?: string,
-  pet_id?: string,
-  categoria?: string | null
+  desconto: number
 ) {
   const user = await getAuthUser();
   return withErrorHandler(
@@ -89,9 +83,6 @@ export async function addLancamento(
         data,
         valor_bruto: valorBruto,
         desconto,
-        customer_id: customer_id || null,
-        pet_id: pet_id || null,
-        categoria: categoria || null
       });
 
       if (error) throw handleSupabaseError(error, 'addLancamento');
