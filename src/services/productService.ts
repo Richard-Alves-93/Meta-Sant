@@ -9,14 +9,14 @@ import { getAuthUser } from "@/services/authService";
 import type { Product } from "@/lib/types";
 
 export async function fetchProducts(): Promise<Product[]> {
-  const { data, error } = await supabase.from('products').select('*').eq('ativo', true).order('nome');
+  const { data, error } = await supabase.from('products').select('*').order('nome');
   if (error) throw error;
   return data as Product[];
 }
 
 export async function addProduct(product: Omit<Product, 'id'>): Promise<Product> {
   const user = await getAuthUser();
-  const { data, error } = await supabase.from('products').insert({ ...product, ativo: true, user_id: user.id } as any).select().single();
+  const { data, error } = await supabase.from('products').insert({ ...product, user_id: user.id } as any).select().single();
   if (error) throw handleSupabaseError(error, 'addProduct');
   return data as Product;
 }
@@ -62,11 +62,11 @@ export async function updateProduct(id: string, product: Partial<Omit<Product, '
 export async function deleteProduct(id: string) {
   return withErrorHandler(
     async () => {
-      // Cascade soft delete: Pet Purchases
-      await supabase.from('pet_purchases').update({ ativo: false } as any).eq('product_id', id);
-      
-      // Inactivate the product
-      const { error } = await supabase.from('products').update({ ativo: false } as any).eq('id', id);
+      // Remove dependent pet purchases first to avoid FK constraints
+      await supabase.from('pet_purchases').delete().eq('product_id', id);
+
+      // Delete the product
+      const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw handleSupabaseError(error, 'deleteProduct');
     },
     'deleteProduct',

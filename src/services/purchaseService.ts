@@ -17,7 +17,6 @@ export async function fetchPetPurchases(): Promise<PetPurchase[]> {
       pet:pets(*),
       product:products(*)
     `)
-    .eq('ativo', true)
     .order('proxima_data', { ascending: true });
   if (error) throw error;
   return data as PetPurchase[];
@@ -53,7 +52,7 @@ export async function updatePetPurchase(id: string, purchase: Partial<Omit<PetPu
 export async function deletePetPurchase(id: string) {
   return withErrorHandler(
     async () => {
-      const { error } = await supabase.from('pet_purchases').update({ ativo: false } as any).eq('id', id);
+      const { error } = await supabase.from('pet_purchases').delete().eq('id', id);
       if (error) throw handleSupabaseError(error, 'deletePetPurchase');
     },
     'deletePetPurchase',
