@@ -81,18 +81,29 @@ const Index = () => {
   };
 
   const handleSaveLanc = async (data: string, bruto: number, desconto: number) => {
-    if (editingLanc) await updateLancamento(editingLanc.id, data, bruto, desconto);
-    else await addLancamento(data, bruto, desconto);
-    await refresh();
-    setLancModalOpen(false);
-    setEditingLanc(null);
-    toast.success(editingLanc ? "Lançamento atualizado!" : "Lançamento salvo!");
+    try {
+      if (editingLanc) await updateLancamento(editingLanc.id, data, bruto, desconto);
+      else await addLancamento(data, bruto, desconto);
+
+      await refresh();
+      setLancModalOpen(false);
+      setEditingLanc(null);
+      toast.success(editingLanc ? "Lançamento atualizado!" : "Lançamento salvo!");
+    } catch (error) {
+      console.error("Erro ao salvar lançamento:", error);
+      toast.error("Ocorreu um erro ao salvar o lançamento. Tente novamente.");
+    }
   };
 
   const handleAddLancInline = async (data: string, bruto: number, desconto: number) => {
-    await addLancamento(data, bruto, desconto);
-    await refresh();
-    toast.success("Lançamento salvo!");
+    try {
+      await addLancamento(data, bruto, desconto);
+      await refresh();
+      toast.success("Lançamento salvo!");
+    } catch (error) {
+      console.error("Erro ao salvar lançamento:", error);
+      toast.error("Ocorreu um erro ao salvar o lançamento. Tente novamente.");
+    }
   };
 
   const handleEditLanc = (l: Lancamento) => { setEditingLanc(l); setLancModalOpen(true); };
