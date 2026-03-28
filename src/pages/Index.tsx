@@ -48,6 +48,13 @@ const Index = () => {
     return localStorage.getItem('crm_custom_logo');
   });
 
+  useEffect(() => {
+    if (user?.user_metadata?.logo_url && user.user_metadata.logo_url !== customLogo) {
+      setCustomLogo(user.user_metadata.logo_url);
+      localStorage.setItem('crm_custom_logo', user.user_metadata.logo_url);
+    }
+  }, [user, customLogo]);
+
   const [metaModalOpen, setMetaModalOpen] = useState(false);
   const [editingMeta, setEditingMeta] = useState<Meta | null>(null);
   const [lancModalOpen, setLancModalOpen] = useState(false);

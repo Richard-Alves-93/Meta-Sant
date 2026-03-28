@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CrmDatabase, exportarDadosJSON, deleteMeta, deleteLancamento, addMeta, addLancamento } from "@/lib/crm-data";
 import { hexToHslStr } from "@/lib/colors";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { WorkSettingsSection } from "./WorkSettingsSection";
 
 interface ConfiguracoesPageProps {
@@ -15,23 +17,37 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
   const [primaryColor, setPrimaryColor] = useState(
     localStorage.getItem('crm_custom_primary_color') || "#3b82f6"
   );
+  const { user } = useAuth();
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        localStorage.setItem('crm_custom_logo', base64String);
-        onLogoChange(base64String);
-      };
-      reader.readAsDataURL(file);
+      if (logoPreview) {
+        URL.revokeObjectURL(logoPreview);
+      }
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
     }
   };
 
-  const handleRemoveLogo = () => {
+  const handleRemoveLogo = async () => {
     localStorage.removeItem('crm_custom_logo');
     onLogoChange(null);
+    setLogoFile(null);
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview);
+      setLogoPreview(null);
+    }
+
+    const { error: metadataError } = await supabase.auth.updateUser({
+      data: { logo_url: null },
+    });
+
+    if (metadataError) {
+      console.warn("Erro ao remover logo do Supabase:", metadataError);
+    }
   };
 
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,6 +59,65 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
     document.documentElement.style.setProperty('--sidebar-primary', hexToHslStr(val));
     document.documentElement.style.setProperty('--sidebar-ring', hexToHslStr(val));
   };
+
+  const handleUploadLogo = async () => {
+    if (!logoFile) {
+      toast.error('Selecione um arquivo antes de salvar a logo.');
+      return;
+    }
+
+    const name = logoFile.name.trim().replace(/\s+/g, '-');
+    const extension = name.includes('.') ? name.substring(name.lastIndexOf('.')) : '';
+    const fileName = `logo-${user?.id ?? Date.now()}${extension}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('logos')
+      .upload(fileName, logoFile, { upsert: true });
+
+    if (uploadError) {
+      console.error('Erro ao enviar logo:', uploadError);
+      toast.error('Não foi possível enviar a logo. Verifique o bucket de armazenamento.');
+      return;
+    }
+
+    const { data: publicData, error: publicError } = supabase.storage
+      .from('logos')
+      .getPublicUrl(fileName);
+
+    if (publicError || !publicData) {
+      console.error('Erro ao gerar URL pública da logo:', publicError);
+      toast.error('Não foi possível gerar a URL pública da logo.');
+      return;
+    }
+
+    const publicUrl = publicData.publicUrl;
+    localStorage.setItem('crm_custom_logo', publicUrl);
+    onLogoChange(publicUrl);
+
+    const { error: metadataError } = await supabase.auth.updateUser({
+      data: { logo_url: publicUrl },
+    });
+
+    if (metadataError) {
+      console.warn('Erro ao salvar logo no Supabase:', metadataError);
+    }
+
+    setLogoFile(null);
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview);
+      setLogoPreview(null);
+    }
+
+    toast.success('Logo salva com sucesso!');
+  };
+
+  useEffect(() => {
+    return () => {
+      if (logoPreview) {
+        URL.revokeObjectURL(logoPreview);
+      }
+    };
+  }, [logoPreview]);
 
   const handleImportBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -149,7 +224,7 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
       </div>
 
       <div className="settings-container flex flex-col md:flex-row gap-6">
-        <aside className="settings-menu w-full md:w-72 rounded-3xl border border-border bg-card p-4 shadow-sm">
+        <aside className="settings-menu w-full md:w-72 rounded-lg border border-border bg-card p-4 shadow-sm">
           <div className="mb-6">
             <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Seções</p>
           </div>
@@ -172,7 +247,7 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
           </div>
         </aside>
 
-        <main className="settings-content flex-1 rounded-3xl border border-border bg-card p-6 shadow-sm overflow-y-auto min-h-[520px]">
+        <main className="settings-content flex-1 rounded-lg border border-border bg-card p-6 shadow-sm overflow-y-auto min-h-[520px]">
           <div className="mb-6">
             <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground mb-2">Configurações</p>
             <h2 className="text-2xl font-semibold text-foreground mb-2">{activeSectionTitle}</h2>
@@ -184,14 +259,27 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
           <div className="space-y-6">
             {activeTab === 'personalizacao' && (
               <div className="space-y-6">
-                <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
                   <h3 className="font-semibold text-card-foreground mb-4">🎨 Personalização</h3>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-muted-foreground mb-2">Logotipo da Barra Lateral</label>
                       <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6">
                         <div className="w-40 h-20 border-2 border-dashed border-border rounded-lg flex items-center justify-center bg-secondary/50 overflow-hidden relative group">
-                          {customLogo ? (
+                          {logoPreview ? (
+                            <>
+                              <img src={logoPreview} alt="Logo Preview" className="max-h-full max-w-full object-contain p-2" />
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  type="button"
+                                  onClick={handleRemoveLogo}
+                                  className="text-white text-xs font-semibold bg-red-500/80 px-2 py-1 rounded hover:bg-red-500"
+                                >
+                                  Remover
+                                </button>
+                              </div>
+                            </>
+                          ) : customLogo ? (
                             <>
                               <img src={customLogo} alt="Logo Preview" className="max-h-full max-w-full object-contain p-2" />
                               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -216,6 +304,30 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
                             className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
                           />
                           <p className="mt-2 text-xs text-muted-foreground">Recomendado: Imagens com fundo transparente (PNG).</p>
+                          {logoFile && (
+                            <div className="mt-4 flex flex-wrap items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={handleUploadLogo}
+                                className="px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                              >
+                                Salvar Logo
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setLogoFile(null);
+                                  if (logoPreview) {
+                                    URL.revokeObjectURL(logoPreview);
+                                    setLogoPreview(null);
+                                  }
+                                }}
+                                className="text-sm text-muted-foreground hover:text-foreground"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -238,13 +350,13 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
             )}
 
             {activeTab === 'jornada' && (
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
                 <WorkSettingsSection />
               </div>
             )}
 
             {activeTab === 'backup' && (
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
                 <h3 className="font-semibold text-card-foreground mb-2">📥 Exportar & 📤 Importar Backup</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   Exporte um backup completo do seu sistema (incluindo cores, logotipo, metas e lançamentos) e importe quando precisar.
@@ -276,7 +388,7 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
             )}
 
             {activeTab === 'sistema' && (
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
                 <h3 className="font-semibold text-card-foreground mb-4">ℹ️ Informações do Sistema</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
