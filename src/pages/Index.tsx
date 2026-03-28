@@ -128,7 +128,28 @@ const Index = () => {
       await refresh();
       setLancModalOpen(false);
       setEditingLanc(null);
-      toast.success(editingLanc ? "Lançamento atualizado!" : "Lançamento salvo!");
+      
+      const hasDriveToken = !!localStorage.getItem('google_provider_token');
+      toast.success(editingLanc ? "Lançamento atualizado!" : "Lançamento salvo!", {
+        ...((hasDriveToken && !editingLanc) ? {
+          action: {
+            label: 'Backup no Drive',
+            onClick: async () => {
+              try {
+                toast.loading("Transferindo para o Drive...", { id: "drive-upload" });
+                const { gerarBackupString } = await import("@/services/exportService");
+                const { uploadBackupToGoogleDrive } = await import("@/services/driveService");
+                const jsonString = await gerarBackupString();
+                await uploadBackupToGoogleDrive(jsonString);
+                toast.success('Backup salvo com sucesso na sua conta do Google Drive!', { id: "drive-upload" });
+              } catch(e: any) {
+                toast.error(e.message, { id: "drive-upload" });
+              }
+            }
+          },
+          duration: 10000
+        } : {})
+      });
     } catch (error: any) {
       console.error("Erro ao salvar lançamento:", error);
       const message = error?.userMessage || error?.message || "Ocorreu um erro ao salvar o lançamento.";
@@ -140,7 +161,28 @@ const Index = () => {
     try {
       await addLancamento(data, bruto, desconto);
       await refresh();
-      toast.success("Lançamento salvo!");
+      
+      const hasDriveToken = !!localStorage.getItem('google_provider_token');
+      toast.success("Lançamento salvo!", {
+        ...(hasDriveToken ? {
+          action: {
+            label: 'Backup no Drive',
+            onClick: async () => {
+              try {
+                toast.loading("Transferindo para o Drive...", { id: "drive-upload" });
+                const { gerarBackupString } = await import("@/services/exportService");
+                const { uploadBackupToGoogleDrive } = await import("@/services/driveService");
+                const jsonString = await gerarBackupString();
+                await uploadBackupToGoogleDrive(jsonString);
+                toast.success('Backup salvo com sucesso na sua conta do Google Drive!', { id: "drive-upload" });
+              } catch(e: any) {
+                toast.error(e.message, { id: "drive-upload" });
+              }
+            }
+          },
+          duration: 10000
+        } : {})
+      });
     } catch (error: any) {
       console.error("Erro ao salvar lançamento:", error);
       const message = error?.userMessage || error?.message || "Ocorreu um erro ao salvar o lançamento.";

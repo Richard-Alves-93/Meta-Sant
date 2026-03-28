@@ -59,6 +59,7 @@ const Login = () => {
         provider: "google",
         options: {
           redirectTo: window.location.origin,
+          scopes: "https://www.googleapis.com/auth/drive.file",
         }
       });
     } catch (err) {

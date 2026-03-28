@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchDatabase } from "@/services/saleService";
 import { formatDate } from "@/lib/formatters";
 
-export async function exportarDadosJSON() {
+export async function gerarBackupString(): Promise<string> {
   const db = await fetchDatabase();
 
   // Buscar os dados das novas tabelas V4
@@ -32,7 +32,13 @@ export async function exportarDadosJSON() {
       pet_purchases: pet_purchases || []
     }
   };
-  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  
+  return JSON.stringify(backup, null, 2);
+}
+
+export async function exportarDadosJSON() {
+  const jsonString = await gerarBackupString();
+  const blob = new Blob([jsonString], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
