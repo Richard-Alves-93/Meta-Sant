@@ -148,7 +148,7 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
 
       if (!publicUrlData?.publicUrl) {
         console.error('Erro ao gerar URL pública da logo:', publicUrlData);
-        setUploadError(publicError?.message || 'Falha ao obter URL pública.');
+        setUploadError('Falha ao obter URL pública.');
         toast.error('Não foi possível gerar a URL pública da logo.');
         return;
       }
