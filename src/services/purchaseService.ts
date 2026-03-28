@@ -69,7 +69,6 @@ export async function fetchPurchases(filters?: { status?: PetPurchaseStatus }): 
       pet:pets(*, customer:customers(*)),
       product:products(*)
     `)
-    .eq('ativo', true)
     .order('proxima_data', { ascending: true });
 
   if (filters?.status) {
