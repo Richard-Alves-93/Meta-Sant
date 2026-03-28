@@ -3,7 +3,7 @@ import { CrmDatabase, exportarDadosJSON, deleteMeta, deleteLancamento, addMeta, 
 import { hexToHslStr } from "@/lib/colors";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, STORAGE_BUCKET } from "@/integrations/supabase/client";
 import { WorkSettingsSection } from "./WorkSettingsSection";
 
 interface ConfiguracoesPageProps {
@@ -62,6 +62,42 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
     document.documentElement.style.setProperty('--sidebar-ring', hexToHslStr(val));
   };
 
+  const checkStorageBucket = async () => {
+    try {
+      const { data, error } = await supabase.storage.listBuckets();
+      console.log('Buckets disponíveis:', data);
+      if (error) {
+        console.error('Erro buckets:', error.message || error);
+      }
+      const hasBucket = data?.some((bucket) => bucket.name === STORAGE_BUCKET);
+      if (!hasBucket) {
+        console.error(`Bucket '${STORAGE_BUCKET}' não encontrado. Verifique o projeto Supabase e a chave usada.`);
+      }
+    } catch (err) {
+      console.error('Erro ao listar buckets do Supabase:', err);
+    }
+  };
+
+  const testUpload = async () => {
+    const file = new File(['teste'], 'teste.txt', { type: 'text/plain' });
+    try {
+      const { data, error } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .upload('teste-upload.txt', file, { cacheControl: '3600', upsert: true });
+
+      console.log('Upload teste:', data, error);
+      if (error) {
+        console.error('Erro detalhe upload teste:', error.message, error);
+      }
+    } catch (err) {
+      console.error('Erro ao executar upload de teste:', err);
+    }
+  };
+
+  useEffect(() => {
+    checkStorageBucket();
+  }, []);
+
   const handleUploadLogo = async () => {
     if (!logoFile) {
       console.error('Nenhum arquivo de logo selecionado para upload.');
@@ -77,8 +113,9 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
 
     const fileExt = logoFile.name.split('.').pop() || 'png';
     const fileName = `logo-${Date.now()}.${fileExt}`;
-    const bucketName = 'logos';
+    const bucketName = STORAGE_BUCKET;
 
+    console.log('Upload de logo para bucket:', bucketName, 'arquivo:', fileName);
     setIsUploadingLogo(true);
     setUploadError(null);
 

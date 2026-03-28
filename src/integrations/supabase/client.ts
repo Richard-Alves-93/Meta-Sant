@@ -4,10 +4,14 @@ import type { Database } from './types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+export const STORAGE_BUCKET = 'logos';
 
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
   throw new Error('Supabase client requires VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to be set.');
 }
+
+console.log('SUPABASE URL:', SUPABASE_URL);
+console.log('SUPABASE PROJECT ID:', SUPABASE_URL?.match(/\/\/([^.]+)\./)?.[1]);
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
