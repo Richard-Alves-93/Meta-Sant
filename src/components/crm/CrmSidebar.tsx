@@ -1,4 +1,5 @@
 import { BarChart3, FileText, Target, TrendingUp, Settings, X, Users, RefreshCw } from "lucide-react";
+import { APP_VERSION } from "@/config/version";
 
 export type CrmPage = "dashboard" | "lancamentos" | "metas" | "cadastros" | "recompras" | "relatorios" | "configuracoes";
 
@@ -33,7 +34,7 @@ const CrmSidebar = ({ currentPage, onNavigate, logoUrl, isOpen, onClose }: CrmSi
 
       {/* Sidebar */}
       <aside className={`
-        fixed left-0 top-0 h-screen w-[250px] bg-card border-r border-border flex flex-col z-50 transition-transform duration-300
+        fixed left-0 top-0 h-screen w-[250px] bg-card border-r border-border flex flex-col justify-between z-50 transition-transform duration-300
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         <div className="flex items-center justify-between px-6 py-6 h-[88px]">
@@ -81,6 +82,9 @@ const CrmSidebar = ({ currentPage, onNavigate, logoUrl, isOpen, onClose }: CrmSi
           </button>
         ))}
       </nav>
+      <div className="px-4 pb-4 pt-3 text-center text-xs text-muted-foreground opacity-70 transition-opacity hover:opacity-100">
+        <span title="Versão do sistema">v{APP_VERSION}</span>
+      </div>
     </aside>
     </>
   );

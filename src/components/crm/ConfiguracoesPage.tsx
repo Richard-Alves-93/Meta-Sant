@@ -3,7 +3,6 @@ import { CrmDatabase, exportarDadosJSON, deleteMeta, deleteLancamento, addMeta, 
 import { hexToHslStr } from "@/lib/colors";
 import { toast } from "sonner";
 import { WorkSettingsSection } from "./WorkSettingsSection";
-import { APP_VERSION } from "@/config/version";
 
 interface ConfiguracoesPageProps {
   db: CrmDatabase;
@@ -203,10 +202,6 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
           <h3 className="font-semibold text-card-foreground mb-4">ℹ️ Informações do Sistema</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">Versão</div>
-              <div className="font-semibold text-card-foreground">{APP_VERSION}</div>
-            </div>
             <div>
               <div className="text-xs text-muted-foreground mb-1">Armazenamento</div>
               <div className="font-semibold text-card-foreground">Cloud</div>
