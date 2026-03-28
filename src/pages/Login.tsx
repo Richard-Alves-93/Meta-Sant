@@ -8,20 +8,45 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) throw error;
-      toast.success("Login realizado com sucesso!");
+      if (isRegisterMode) {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        if (data?.session) {
+          toast.success("Conta criada e login realizado com sucesso!");
+        } else {
+          toast.success(
+            "Conta criada! Verifique seu e-mail para confirmar o acesso."
+          );
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+        if (!data?.session) {
+          throw new Error(
+            "Login realizado, mas nenhuma sessão foi criada. Tente novamente."
+          );
+        }
+
+        toast.success("Login realizado com sucesso!");
+      }
     } catch (err: any) {
-      console.error("Login error:", err);
-      toast.error(err.message || "Erro ao fazer login com e-mail.");
+      console.error("Erro login:", err);
+      toast.error(err?.message || "Erro ao autenticar. Verifique suas credenciais.");
     } finally {
       setLoading(false);
     }
@@ -90,7 +115,7 @@ const Login = () => {
             Gerencie suas vendas e metas com inteligência
           </p>
 
-          <form onSubmit={handleEmailLogin} className="space-y-4 mb-4 text-left">
+          <form onSubmit={handleEmailAuth} className="space-y-4 mb-4 text-left">
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Email</label>
               <input 
@@ -118,9 +143,41 @@ const Login = () => {
               disabled={loading}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              {loading ? "Entrando..." : "Entrar com Email"}
+              {loading
+                ? isRegisterMode
+                  ? "Criando conta..."
+                  : "Entrando..."
+                : isRegisterMode
+                ? "Criar conta"
+                : "Entrar com Email"}
             </button>
           </form>
+
+          <div className="mb-4 text-center text-sm text-muted-foreground">
+            {isRegisterMode ? (
+              <>
+                Já tem conta?{' '}
+                <button
+                  type="button"
+                  onClick={() => setIsRegisterMode(false)}
+                  className="font-medium text-primary hover:underline"
+                >
+                  Faça login
+                </button>
+              </>
+            ) : (
+              <>
+                Ainda não tem conta?{' '}
+                <button
+                  type="button"
+                  onClick={() => setIsRegisterMode(true)}
+                  className="font-medium text-primary hover:underline"
+                >
+                  Criar conta
+                </button>
+              </>
+            )}
+          </div>
 
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">

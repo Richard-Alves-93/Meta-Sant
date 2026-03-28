@@ -17,23 +17,56 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const validateSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.access_token) {
+          const { data: { user }, error } = await supabase.auth.getUser();
+          if (error || !user) {
+            console.warn('[Auth] Sessão inválida detectada. Limpando tokens antigos.', error);
+            await supabase.auth.signOut().catch((signOutError) =>
+              console.error('[Auth] Erro ao limpar sessão inválida:', signOutError)
+            );
+            if (isMounted) {
+              setUser(null);
+              setSession(null);
+            }
+          } else if (isMounted) {
+            setUser(user);
+            setSession(session);
+          }
+        }
+      } catch (err) {
+        console.error('[Auth] Falha ao validar sessão inicial:', err);
+        await supabase.auth.signOut().catch((signOutError) =>
+          console.error('[Auth] Erro ao limpar sessão no init:', signOutError)
+        );
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    validateSession();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
   };
 
   return (
