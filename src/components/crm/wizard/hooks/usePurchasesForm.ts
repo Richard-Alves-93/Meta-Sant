@@ -18,6 +18,7 @@ export function usePurchasesForm(
       petIndex: 0,
       product_id: '',
       product_name: '',
+      categoria: '',
       prazo_recompra: 30,
       data_compra: format(new Date(), 'yyyy-MM-dd'),
       valor: 0

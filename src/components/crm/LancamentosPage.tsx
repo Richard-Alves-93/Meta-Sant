@@ -103,7 +103,7 @@ const LancamentosPage = ({ db, onAdd, onEdit, onDelete, onOpenModal }: Lancament
           <button onClick={handleSave} className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
             Salvar lançamento
           </button>
-          <button onClick={() => { setBruto(""); setDesconto(""); }} className="px-4 py-2.5 rounded-lg bg-card border border-border text-muted-foreground text-sm font-medium hover:bg-secondary transition-colors">
+          <button onClick={() => { bruto.setValue(0); desconto.setValue(0); }} className="px-4 py-2.5 rounded-lg bg-card border border-border text-muted-foreground text-sm font-medium hover:bg-secondary transition-colors">
             Limpar
           </button>
         </div>

@@ -16,6 +16,7 @@ export interface Lancamento {
   data: string;
   valorBruto: number;
   desconto: number;
+  valorLiquido: number;
   customer_id?: string | null;
   pet_id?: string | null;
   categoria?: string | null;
