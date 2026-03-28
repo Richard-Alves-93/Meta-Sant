@@ -55,8 +55,11 @@ const Login = () => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin,
+        }
       });
     } catch (err) {
       console.error("Login error:", err);
