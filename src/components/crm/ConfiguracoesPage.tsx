@@ -20,6 +20,8 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
   const { user } = useAuth();
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,53 +64,86 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
 
   const handleUploadLogo = async () => {
     if (!logoFile) {
+      console.error('Nenhum arquivo de logo selecionado para upload.');
       toast.error('Selecione um arquivo antes de salvar a logo.');
       return;
     }
 
-    const name = logoFile.name.trim().replace(/\s+/g, '-');
-    const extension = name.includes('.') ? name.substring(name.lastIndexOf('.')) : '';
-    const fileName = `logo-${user?.id ?? Date.now()}${extension}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('logos')
-      .upload(fileName, logoFile, { upsert: true });
-
-    if (uploadError) {
-      console.error('Erro ao enviar logo:', uploadError);
-      toast.error('Não foi possível enviar a logo. Verifique o bucket de armazenamento.');
+    if (!logoFile.size) {
+      console.error('Arquivo de logo inválido ou vazio.');
+      toast.error('O arquivo selecionado é inválido.');
       return;
     }
 
-    const { data: publicData, error: publicError } = supabase.storage
-      .from('logos')
-      .getPublicUrl(fileName);
+    const fileExt = logoFile.name.split('.').pop() || 'png';
+    const fileName = `logo-${Date.now()}.${fileExt}`;
+    const bucketName = 'logos';
 
-    if (publicError || !publicData) {
-      console.error('Erro ao gerar URL pública da logo:', publicError);
-      toast.error('Não foi possível gerar a URL pública da logo.');
-      return;
+    setIsUploadingLogo(true);
+    setUploadError(null);
+
+    try {
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(fileName, logoFile, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: logoFile.type,
+        });
+
+      if (uploadError) {
+        console.error('Erro no upload:', uploadError);
+        setUploadError(uploadError.message || 'Upload de logo falhou.');
+        toast.error(`Erro no upload: ${uploadError.message || 'Verifique o bucket.'}`);
+        return;
+      }
+
+      if (!uploadData) {
+        console.error('Upload concluído sem dados de retorno.');
+        setUploadError('Retorno de upload inválido.');
+        toast.error('Upload concluído sem retorno válido do Supabase.');
+        return;
+      }
+
+      const { data: publicUrlData, error: publicError } = await supabase.storage
+        .from(bucketName)
+        .getPublicUrl(fileName);
+
+      if (publicError || !publicUrlData?.publicUrl) {
+        console.error('Erro ao gerar URL pública da logo:', publicError, publicUrlData);
+        setUploadError(publicError?.message || 'Falha ao obter URL pública.');
+        toast.error('Não foi possível gerar a URL pública da logo.');
+        return;
+      }
+
+      const logoUrl = publicUrlData.publicUrl;
+      localStorage.setItem('crm_custom_logo', logoUrl);
+      onLogoChange(logoUrl);
+
+      if (user) {
+        const { error: metadataError } = await supabase.auth.updateUser({
+          data: { logo_url: logoUrl },
+        });
+
+        if (metadataError) {
+          console.warn('Erro ao salvar logo no Supabase auth:', metadataError);
+        }
+      }
+
+      setLogoFile(null);
+      if (logoPreview) {
+        URL.revokeObjectURL(logoPreview);
+        setLogoPreview(null);
+      }
+
+      toast.success('Logo salva com sucesso!');
+    } catch (err: any) {
+      console.error('Erro ao enviar logo:', err);
+      setUploadError(err?.message || String(err));
+      toast.error('Erro ao enviar logo. Veja o console para detalhes.');
+    } finally {
+      setIsUploadingLogo(false);
     }
-
-    const publicUrl = publicData.publicUrl;
-    localStorage.setItem('crm_custom_logo', publicUrl);
-    onLogoChange(publicUrl);
-
-    const { error: metadataError } = await supabase.auth.updateUser({
-      data: { logo_url: publicUrl },
-    });
-
-    if (metadataError) {
-      console.warn('Erro ao salvar logo no Supabase:', metadataError);
-    }
-
-    setLogoFile(null);
-    if (logoPreview) {
-      URL.revokeObjectURL(logoPreview);
-      setLogoPreview(null);
-    }
-
-    toast.success('Logo salva com sucesso!');
   };
 
   useEffect(() => {
@@ -309,14 +344,16 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
                               <button
                                 type="button"
                                 onClick={handleUploadLogo}
-                                className="px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                                disabled={isUploadingLogo}
+                                className="px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                               >
-                                Salvar Logo
+                                {isUploadingLogo ? 'Enviando...' : 'Salvar Logo'}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => {
                                   setLogoFile(null);
+                                  setUploadError(null);
                                   if (logoPreview) {
                                     URL.revokeObjectURL(logoPreview);
                                     setLogoPreview(null);
@@ -327,6 +364,9 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
                                 Cancelar
                               </button>
                             </div>
+                          )}
+                          {uploadError && (
+                            <p className="mt-2 text-sm text-destructive">{uploadError}</p>
                           )}
                         </div>
                       </div>
