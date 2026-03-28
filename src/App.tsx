@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import { usePersistRoute } from "@/hooks/usePersistRoute";
 
 const queryClient = new QueryClient();
 
@@ -92,6 +93,12 @@ const DynamicPwaSetup = () => {
   return null;
 };
 
+const PersistRouteManager = () => {
+  const { user } = useAuth();
+  usePersistRoute(Boolean(user));
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -100,10 +107,10 @@ const App = () => (
       <DynamicPwaSetup />
       <BrowserRouter>
         <AuthProvider>
+          <PersistRouteManager />
           <Routes>
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
+            <Route path="/*" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>

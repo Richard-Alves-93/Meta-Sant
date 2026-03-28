@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, lazy } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import CrmSidebar, { CrmPage } from "@/components/crm/CrmSidebar";
 import { PageSuspense } from "@/components/common/PageSuspense";
 import DashboardPage from "@/components/crm/DashboardPage";
@@ -30,7 +31,16 @@ const ConfiguracoesPage = lazy(() => import("@/components/crm/ConfiguracoesPage"
 
 const Index = () => {
   const { user, signOut } = useAuth();
-  const [page, setPage] = useState<CrmPage>("dashboard");
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const routeToPage = (pathname: string): CrmPage => {
+    const path = pathname === "/" ? "dashboard" : pathname.replace(/^\//, "");
+    const validPages: CrmPage[] = ["dashboard", "lancamentos", "metas", "cadastros", "recompras", "relatorios", "configuracoes"];
+    return validPages.includes(path as CrmPage) ? (path as CrmPage) : "dashboard";
+  };
+
+  const page = routeToPage(location.pathname);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [db, setDb] = useState<CrmDatabase>({ metas: [], lancamentos: [] });
   const [loading, setLoading] = useState(true);
@@ -142,7 +152,7 @@ const Index = () => {
     setLastCheck();
     setGoalReminderOpen(false);
     setGoalReminderForce(false);
-    setPage("metas");
+    navigate('/metas', { replace: true });
     setEditingMeta(null);
     setMetaModalOpen(true);
   };
@@ -172,9 +182,7 @@ const Index = () => {
     <div className="flex min-h-screen bg-background">
       <CrmSidebar 
         currentPage={page} 
-        onNavigate={(p) => { setPage(p); setIsSidebarOpen(false); }} 
-        logoUrl={customLogo} 
-        isOpen={isSidebarOpen}
+                onNavigate={(p) => { navigate(p === "dashboard" ? "/" : `/${p}`); setIsSidebarOpen(false); }} 
         onClose={() => setIsSidebarOpen(false)}
       />
 
@@ -208,7 +216,7 @@ const Index = () => {
           {page === "dashboard" && (
             <DashboardPage db={db} onOpenLancamento={() => { setEditingLanc(null); setLancModalOpen(true); }}
               onEditMeta={handleEditMeta} onDeleteMeta={handleDeleteMeta}
-              onNavigateToRecompras={() => { setPage("recompras"); setIsSidebarOpen(false); }} />
+              onNavigateToRecompras={() => { navigate('/recompras'); setIsSidebarOpen(false); }} />
           )}
           {page === "lancamentos" && (
             <PageSuspense>
