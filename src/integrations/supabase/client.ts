@@ -2,8 +2,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Hardcoded para garantir conexão com o projeto antigo, ignorando as varíaveis do Lovable
+const SUPABASE_URL = "https://apdaqtetajxzpaofdgvu.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwZGFxdGV0YWp4enBhb2Z1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NzUwNDYsImV4cCI6MjA4ODI1MTA0Nn0.ruFKCfnVaR8N-Cb6E1b_5Euq9FKFCGre4KwCRENoAyo";
 export const STORAGE_BUCKET = 'logos';
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
