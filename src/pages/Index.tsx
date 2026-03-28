@@ -189,7 +189,8 @@ const Index = () => {
     <div className="flex min-h-screen bg-background">
       <CrmSidebar 
         currentPage={page} 
-                onNavigate={(p) => { navigate(p === "dashboard" ? "/" : `/${p}`); setIsSidebarOpen(false); }} 
+        isOpen={isSidebarOpen}
+        onNavigate={(p) => { navigate(p === "dashboard" ? "/" : `/${p}`); setIsSidebarOpen(false); }} 
         onClose={() => setIsSidebarOpen(false)}
       />
 

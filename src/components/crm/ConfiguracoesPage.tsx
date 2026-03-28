@@ -142,13 +142,13 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
         return;
       }
 
-      const { data: publicUrlData, error: publicError } = await supabase.storage
+      const { data: publicUrlData } = supabase.storage
         .from(bucketName)
         .getPublicUrl(fileName);
 
-      if (publicError || !publicUrlData?.publicUrl) {
-        console.error('Erro ao gerar URL pública da logo:', publicError, publicUrlData);
-        setUploadError(publicError?.message || 'Falha ao obter URL pública.');
+      if (!publicUrlData?.publicUrl) {
+        console.error('Erro ao gerar URL pública da logo:', publicUrlData);
+        setUploadError('Falha ao obter URL pública.');
         toast.error('Não foi possível gerar a URL pública da logo.');
         return;
       }
