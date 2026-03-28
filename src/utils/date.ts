@@ -125,6 +125,16 @@ export function getFirstDayOfMonth(date?: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
 
+export function isLastDayOfMonth(date: Date) {
+  const tomorrow = new Date(date);
+  tomorrow.setDate(date.getDate() + 1);
+  return tomorrow.getDate() === 1;
+}
+
+export function isFirstDayOfMonth(date: Date) {
+  return date.getDate() === 1;
+}
+
 /**
  * Verifica se uma data é válida
  */

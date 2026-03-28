@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lancamento, formatCurrency } from "@/lib/crm-data";
 import { formatISODate } from "@/utils/date";
+import { useCurrencyInput } from "@/hooks/useCurrencyInput";
 
 interface LancamentoModalProps {
   open: boolean;
@@ -15,26 +16,27 @@ interface LancamentoModalProps {
 
 const LancamentoModal = ({ open, onClose, onSave, editingLancamento }: LancamentoModalProps) => {
   const [data, setData] = useState("");
-  const [bruto, setBruto] = useState("");
-  const [desconto, setDesconto] = useState("");
+  const bruto = useCurrencyInput(0);
+  const desconto = useCurrencyInput(0);
 
   useEffect(() => {
     if (editingLancamento) {
       setData(editingLancamento.data);
-      setBruto(String(editingLancamento.valorBruto));
-      setDesconto(String(editingLancamento.desconto));
+      bruto.setValue(editingLancamento.valorBruto);
+      desconto.setValue(editingLancamento.desconto);
     } else {
       setData(formatISODate(new Date()));
-      setBruto(""); setDesconto("");
+      bruto.setValue(0);
+      desconto.setValue(0);
     }
   }, [editingLancamento, open]);
 
-  const liquido = (parseFloat(bruto) || 0) - (parseFloat(desconto) || 0);
+  const liquido = bruto.rawValue - desconto.rawValue;
 
   const handleSave = () => {
-    const v = parseFloat(bruto);
+    const v = bruto.rawValue;
     if (!data || !v || v <= 0) return;
-    onSave(data, v, parseFloat(desconto) || 0);
+    onSave(data, v, desconto.rawValue);
   };
 
   return (
@@ -50,11 +52,23 @@ const LancamentoModal = ({ open, onClose, onSave, editingLancamento }: Lancament
           </div>
           <div className="space-y-2">
             <Label>Valor Bruto (R$)</Label>
-            <Input type="number" value={bruto} onChange={(e) => setBruto(e.target.value)} placeholder="0.00" step="0.01" />
+            <Input
+              type="text"
+              inputMode="numeric"
+              value={bruto.displayValue}
+              onChange={bruto.handleChange}
+              placeholder="R$ 0,00"
+            />
           </div>
           <div className="space-y-2">
             <Label>Desconto (R$)</Label>
-            <Input type="number" value={desconto} onChange={(e) => setDesconto(e.target.value)} placeholder="0.00" step="0.01" />
+            <Input
+              type="text"
+              inputMode="numeric"
+              value={desconto.displayValue}
+              onChange={desconto.handleChange}
+              placeholder="R$ 0,00"
+            />
           </div>
           <div className="bg-secondary rounded-lg p-3 text-sm">
             Valor Líquido: <span className="font-bold text-card-foreground">{formatCurrency(liquido)}</span>

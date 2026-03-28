@@ -4,6 +4,8 @@ import { PageSuspense } from "@/components/common/PageSuspense";
 import DashboardPage from "@/components/crm/DashboardPage";
 import MetaModal from "@/components/crm/MetaModal";
 import LancamentoModal from "@/components/crm/LancamentoModal";
+import GoalReminderModal from "@/components/crm/GoalReminderModal";
+import { getLastCheck, setLastCheck, shouldAskNextMonthGoals, shouldForceGoalSetup } from "@/services/goalService";
 import {
   fetchDatabase, addMeta, updateMeta, deleteMeta,
   addLancamento, updateLancamento, deleteLancamento,
@@ -40,6 +42,8 @@ const Index = () => {
   const [editingMeta, setEditingMeta] = useState<Meta | null>(null);
   const [lancModalOpen, setLancModalOpen] = useState(false);
   const [editingLanc, setEditingLanc] = useState<Lancamento | null>(null);
+  const [goalReminderOpen, setGoalReminderOpen] = useState(false);
+  const [goalReminderForce, setGoalReminderForce] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -63,6 +67,25 @@ const Index = () => {
       document.documentElement.style.setProperty('--sidebar-ring', hexToHslStr(customPrimaryColor));
     }
   }, []);
+
+  useEffect(() => {
+    if (loading) return;
+
+    const today = new Date();
+    const hasGoals = db.metas.length > 0;
+    const lastCheckDate = getLastCheck();
+
+    if (shouldForceGoalSetup({ currentDate: today, hasCurrentMonthGoals: hasGoals })) {
+      setGoalReminderForce(true);
+      setGoalReminderOpen(true);
+      return;
+    }
+
+    if (shouldAskNextMonthGoals({ currentDate: today, hasNextMonthGoals: hasGoals, lastCheckDate })) {
+      setGoalReminderForce(false);
+      setGoalReminderOpen(true);
+    }
+  }, [db.metas.length, loading]);
 
   const handleSaveMeta = async (nome: string, valor: number, descricao: string) => {
     if (editingMeta) await updateMeta(editingMeta.id, nome, valor, descricao);
@@ -113,6 +136,21 @@ const Index = () => {
     if (confirm("Tem certeza que deseja remover este lançamento?")) {
       await deleteLancamento(id); await refresh(); toast.success("Lançamento removido!");
     }
+  };
+
+  const handleGoalReminderCreate = () => {
+    setLastCheck();
+    setGoalReminderOpen(false);
+    setGoalReminderForce(false);
+    setPage("metas");
+    setEditingMeta(null);
+    setMetaModalOpen(true);
+  };
+
+  const handleGoalReminderLater = () => {
+    setLastCheck();
+    setGoalReminderOpen(false);
+    setGoalReminderForce(false);
   };
 
   const handleExport = async () => { await exportarDadosJSON(); };
@@ -217,6 +255,12 @@ const Index = () => {
         Desenvolvido por Richard Alves
       </a>
 
+      <GoalReminderModal
+        open={goalReminderOpen}
+        force={goalReminderForce}
+        onCreate={handleGoalReminderCreate}
+        onLater={handleGoalReminderLater}
+      />
       <MetaModal open={metaModalOpen} onClose={() => { setMetaModalOpen(false); setEditingMeta(null); }}
         onSave={handleSaveMeta} editingMeta={editingMeta} />
       <LancamentoModal open={lancModalOpen} onClose={() => { setLancModalOpen(false); setEditingLanc(null); }}

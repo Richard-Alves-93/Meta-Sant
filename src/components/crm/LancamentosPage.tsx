@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { CrmDatabase, formatCurrency, formatDate, Lancamento } from "@/lib/crm-data";
 import { parseLocalDate, formatISODate } from "@/utils/date";
+import { useCurrencyInput } from "@/hooks/useCurrencyInput";
 import KpiCard from "./KpiCard";
 import { Pencil, Trash2, DollarSign, TrendingDown, Wallet } from "lucide-react";
 
@@ -18,8 +19,8 @@ const LancamentosPage = ({ db, onAdd, onEdit, onDelete, onOpenModal }: Lancament
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
   const [data, setData] = useState(() => formatISODate(new Date()));
-  const [bruto, setBruto] = useState("");
-  const [desconto, setDesconto] = useState("");
+  const bruto = useCurrencyInput(0);
+  const desconto = useCurrencyInput(0);
 
   const filtered = useMemo(() => {
     let list = db.lancamentos;
@@ -38,11 +39,12 @@ const LancamentosPage = ({ db, onAdd, onEdit, onDelete, onOpenModal }: Lancament
   const totalLiquido = filtered.reduce((s, l) => s + l.valorLiquido, 0);
 
   const handleSave = () => {
-    const v = parseFloat(bruto);
+    const v = bruto.rawValue;
     if (!data || !v || v <= 0) return;
-    onAdd(data, v, parseFloat(desconto) || 0);
+    onAdd(data, v, desconto.rawValue);
     setData(formatISODate(new Date()));
-    setBruto(""); setDesconto("");
+    bruto.setValue(0);
+    desconto.setValue(0);
   };
 
   return (
@@ -73,13 +75,25 @@ const LancamentosPage = ({ db, onAdd, onEdit, onDelete, onOpenModal }: Lancament
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-card-foreground">Valor Bruto (R$)</label>
-            <input type="number" value={bruto} onChange={(e) => setBruto(e.target.value)} placeholder="0.00" step="0.01"
-              className="w-full px-3 py-2.5 border border-input rounded-lg text-sm bg-card text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            <input
+              type="text"
+              inputMode="numeric"
+              value={bruto.displayValue}
+              onChange={bruto.handleChange}
+              placeholder="R$ 0,00"
+              className="w-full px-3 py-2.5 border border-input rounded-lg text-sm bg-card text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-card-foreground">Desconto (R$)</label>
-            <input type="number" value={desconto} onChange={(e) => setDesconto(e.target.value)} placeholder="0.00" step="0.01"
-              className="w-full px-3 py-2.5 border border-input rounded-lg text-sm bg-card text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            <input
+              type="text"
+              inputMode="numeric"
+              value={desconto.displayValue}
+              onChange={desconto.handleChange}
+              placeholder="R$ 0,00"
+              className="w-full px-3 py-2.5 border border-input rounded-lg text-sm bg-card text-card-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
           </div>
         </div>
         <div className="bg-success/10 border border-success/30 text-success rounded-lg p-3 text-sm mb-4">
