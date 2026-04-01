@@ -46,7 +46,7 @@ const Login = () => {
       }
     } catch (err: any) {
       console.error("Erro login:", err);
-      toast.error(err?.message || "Erro ao autenticar. Verifique suas credenciais.");
+      toast.error("Erro ao autenticar. Verifique suas credenciais.");
     } finally {
       setLoading(false);
     }
