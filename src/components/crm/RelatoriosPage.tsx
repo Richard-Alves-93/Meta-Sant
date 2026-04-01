@@ -84,13 +84,13 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
           <div className="flex bg-secondary p-1 rounded-lg">
             <button 
               onClick={() => setViewMode('month')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${viewMode === 'month' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${viewMode === 'month' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Visão Mensal
             </button>
             <button 
               onClick={() => setViewMode('year')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${viewMode === 'year' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${viewMode === 'year' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Visão Anual
             </button>
