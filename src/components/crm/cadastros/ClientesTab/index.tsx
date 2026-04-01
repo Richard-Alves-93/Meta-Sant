@@ -8,7 +8,7 @@ interface ClientesTabProps {
   customers: Customer[];
   loading: boolean;
   onWizardOpen: () => void;
-  onSaveCliente: (customer: Omit<Customer, 'id'>) => Promise<void>;
+  onSaveCliente: (customer: Omit<Customer, 'id'>, id?: string) => Promise<void>;
   onDeleteCliente: (id: string) => Promise<void>;
 }
 
@@ -43,7 +43,7 @@ export function ClientesTab({
   };
 
   const handleSave = async (customer: Omit<Customer, 'id'>) => {
-    await onSaveCliente(customer);
+    await onSaveCliente(customer, editingCliente?.id);
     handleCloseModal();
   };
 

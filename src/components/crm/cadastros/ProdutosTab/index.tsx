@@ -7,7 +7,7 @@ import { ProdutosTable } from "./ProdutosTable";
 interface ProdutosTabProps {
   products: Product[];
   loading: boolean;
-  onSaveProduto: (product: Omit<Product, 'id'>) => Promise<void>;
+  onSaveProduto: (product: Omit<Product, 'id'>, id?: string) => Promise<void>;
   onDeleteProduto: (id: string) => Promise<void>;
 }
 
@@ -40,7 +40,7 @@ export function ProdutosTab({
   };
 
   const handleSave = async (product: Omit<Product, 'id'>) => {
-    await onSaveProduto(product);
+    await onSaveProduto(product, editingProduto?.id);
     handleCloseModal();
   };
 

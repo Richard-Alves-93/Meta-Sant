@@ -8,7 +8,7 @@ interface PetsTabProps {
   pets: Pet[];
   customers: Customer[];
   loading: boolean;
-  onSavePet: (pet: Omit<Pet, 'id'>) => Promise<void>;
+  onSavePet: (pet: Omit<Pet, 'id'>, id?: string) => Promise<void>;
   onDeletePet: (id: string) => Promise<void>;
 }
 
@@ -42,7 +42,7 @@ export function PetsTab({
   };
 
   const handleSave = async (pet: Omit<Pet, 'id'>) => {
-    await onSavePet(pet);
+    await onSavePet(pet, editingPet?.id);
     handleCloseModal();
   };
 

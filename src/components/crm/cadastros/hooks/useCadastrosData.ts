@@ -23,11 +23,11 @@ interface UseCadastrosDataReturn {
 
   // Handlers
   loadData: () => Promise<void>;
-  handleSaveCliente: (customer: Omit<Customer, 'id'>) => Promise<void>;
+  handleSaveCliente: (customer: Omit<Customer, 'id'>, id?: string) => Promise<void>;
   handleDeleteCliente: (id: string) => Promise<void>;
-  handleSavePet: (pet: Omit<Pet, 'id'>) => Promise<void>;
+  handleSavePet: (pet: Omit<Pet, 'id'>, id?: string) => Promise<void>;
   handleDeletePet: (id: string) => Promise<void>;
-  handleSaveProduto: (product: Omit<Product, 'id'>) => Promise<void>;
+  handleSaveProduto: (product: Omit<Product, 'id'>, id?: string) => Promise<void>;
   handleDeleteProduto: (id: string) => Promise<void>;
   handleSaveCadastroCompleto: (
     tutor: Omit<Customer, 'id'>,
@@ -89,10 +89,10 @@ export function useCadastrosData(): UseCadastrosDataReturn {
   }, [loadData]);
 
   // ---- Handlers: Clientes ----
-  const handleSaveCliente = useCallback(async (customer: Omit<Customer, 'id'>) => {
+  const handleSaveCliente = useCallback(async (customer: Omit<Customer, 'id'>, id?: string) => {
     try {
-      if (editingCliente) {
-        await updateCustomer(editingCliente.id, customer);
+      if (id) {
+        await updateCustomer(id, customer);
         toast.success("Tutor atualizado!");
       } else {
         await addCustomer(customer);
@@ -104,7 +104,7 @@ export function useCadastrosData(): UseCadastrosDataReturn {
       console.error(error);
       toast.error("Erro ao salvar cliente.");
     }
-  }, [editingCliente, loadData]);
+  }, [loadData]);
 
   const handleDeleteCliente = useCallback(async (id: string) => {
     if (!confirm("Tem certeza que deseja remover este tutor? Pets vinculados também serão removidos.")) return;
@@ -124,11 +124,11 @@ export function useCadastrosData(): UseCadastrosDataReturn {
   }, []);
 
   // ---- Handlers: Pets ----
-  const handleSavePet = useCallback(async (pet: Omit<Pet, 'id'>) => {
+  const handleSavePet = useCallback(async (pet: Omit<Pet, 'id'>, id?: string) => {
     try {
       const sanitized = sanitizePetData(pet);
-      if (editingPet) {
-        await updatePet(editingPet.id, sanitized);
+      if (id) {
+        await updatePet(id, sanitized);
         toast.success("Pet atualizado!");
       } else {
         await addPet(sanitized);
@@ -140,7 +140,7 @@ export function useCadastrosData(): UseCadastrosDataReturn {
       console.error(error);
       toast.error("Erro ao salvar pet.");
     }
-  }, [editingPet, loadData]);
+  }, [loadData]);
 
   const handleDeletePet = useCallback(async (id: string) => {
     if (!confirm("Tem certeza que deseja remover este pet?")) return;
@@ -158,10 +158,10 @@ export function useCadastrosData(): UseCadastrosDataReturn {
   }, []);
 
   // ---- Handlers: Produtos ----
-  const handleSaveProduto = useCallback(async (product: Omit<Product, 'id'>) => {
+  const handleSaveProduto = useCallback(async (product: Omit<Product, 'id'>, id?: string) => {
     try {
-      if (editingProduto) {
-        await updateProduct(editingProduto.id, product);
+      if (id) {
+        await updateProduct(id, product);
         toast.success("Produto atualizado!");
       } else {
         await addProduct(product);
@@ -173,7 +173,7 @@ export function useCadastrosData(): UseCadastrosDataReturn {
       console.error(error);
       toast.error("Erro ao salvar produto.");
     }
-  }, [editingProduto, loadData]);
+  }, [loadData]);
 
   const handleDeleteProduto = useCallback(async (id: string) => {
     if (!confirm("Tem certeza que deseja remover este produto? O histórico de compras será mantido, mas não será possível vinculá-lo a novas.")) return;
