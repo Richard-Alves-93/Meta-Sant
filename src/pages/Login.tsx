@@ -69,42 +69,7 @@ const Login = () => {
     }
   };
 
-  const handleDevBypass = () => {
-    const fakeSession = {
-      access_token: "fake-dev-token",
-      refresh_token: "fake-dev-token",
-      expires_in: 3600,
-      expires_at: Math.floor(Date.now() / 1000) + 3600,
-      token_type: "bearer",
-      user: {
-        id: "00000000-0000-0000-0000-000000000000",
-        aud: "authenticated",
-        role: "authenticated",
-        email: "dev@local",
-        phone: "",
-        app_metadata: { provider: "email", providers: ["email"] },
-        user_metadata: { name: "Desenvolvedor" },
-        identities: [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    };
-    // Force a dummy session payload in local storage under the default supabase auth key
-    // Requires knowing the project ref, which we can extract from the Vite env
-    const storageKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-    if (storageKey) {
-      localStorage.setItem(storageKey, JSON.stringify(fakeSession));
-    } else {
-      // Guessing fallback
-      const projectId = import.meta.env.VITE_SUPABASE_URL?.match(/\/\/([^.]+)\./)?.[1] || 'dev';
-      localStorage.setItem(`sb-${projectId}-auth-token`, JSON.stringify(fakeSession));
-    }
-    
-    toast.success("Acesso de desenvolvimento liberado!");
-    window.location.href = '/';
-  };
 
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
