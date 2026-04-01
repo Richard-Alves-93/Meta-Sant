@@ -1,5 +1,6 @@
-import { BarChart3, FileText, Target, TrendingUp, Settings, X, Users, RefreshCw } from "lucide-react";
+import { BarChart3, FileText, Target, TrendingUp, Settings, X, Users, RefreshCw, Moon, Sun } from "lucide-react";
 import { APP_VERSION } from "@/config/version";
+import { useTheme } from "@/hooks/useTheme";
 
 export type CrmPage = "dashboard" | "lancamentos" | "metas" | "cadastros" | "recompras" | "relatorios" | "configuracoes";
 
@@ -22,6 +23,8 @@ const navItems: { page: CrmPage; label: string; icon: React.ReactNode }[] = [
 ];
 
 const CrmSidebar = ({ currentPage, onNavigate, logoUrl, isOpen, onClose }: CrmSidebarProps) => {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <>
       {/* Mobile Overlay */}
@@ -82,8 +85,15 @@ const CrmSidebar = ({ currentPage, onNavigate, logoUrl, isOpen, onClose }: CrmSi
           </button>
         ))}
       </nav>
-      <div className="px-4 pb-4 pt-3 text-center text-xs text-muted-foreground opacity-70 transition-opacity hover:opacity-100">
-        <span title="Versão do sistema">v{APP_VERSION}</span>
+      <div className="px-4 pb-4 pt-3 flex items-center justify-between opacity-70 transition-opacity hover:opacity-100">
+        <button 
+          onClick={toggleTheme}
+          className="p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+          title={theme === 'dark' ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro'}
+        >
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+        <span className="text-xs text-muted-foreground" title="Versão do sistema">v{APP_VERSION}</span>
       </div>
     </aside>
     </>
