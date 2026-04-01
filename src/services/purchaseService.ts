@@ -62,7 +62,7 @@ export async function deletePetPurchase(id: string) {
 }
 
 export async function fetchPurchases(filters?: { status?: PetPurchaseStatus }): Promise<(PetPurchase & { customer?: Customer, pet?: Pet, product?: Product })[]> {
-  let query = supabase
+  const query = supabase
     .from('pet_purchases')
     .select(`
       *,
@@ -71,18 +71,46 @@ export async function fetchPurchases(filters?: { status?: PetPurchaseStatus }): 
     `)
     .order('proxima_data', { ascending: true });
 
-  if (filters?.status) {
-    query = query.eq('status', filters.status);
-  }
-
   const { data, error } = await query;
   if (error) throw error;
 
-  // Map nested customer up for easier access in UI
-  return (data || []).map(item => ({
-    ...item,
-    customer: item.pet?.customer
-  })) as any[];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Calcula dinamicamente o status no front end (Avisar Hoje e Avisar em Breve <= 7 dias)
+  const mappedData = (data || []).map(item => {
+    let currentStatus = item.status;
+    
+    if (!['Recompra registrada', 'Trocado', 'Cancelado', 'Notificado'].includes(currentStatus) && item.proxima_data) {
+       const proxDate = new Date(item.proxima_data);
+       const proxDataLocal = new Date(proxDate.valueOf() + proxDate.getTimezoneOffset() * 60 * 1000);
+       proxDataLocal.setHours(0, 0, 0, 0);
+       
+       const diffDays = Math.round((proxDataLocal.getTime() - today.getTime()) / (1000 * 3600 * 24));
+       
+       if (diffDays < 0) {
+         currentStatus = 'Vencido';
+       } else if (diffDays === 0) {
+         currentStatus = 'Avisar hoje';
+       } else if (diffDays <= 7) {
+         currentStatus = 'Avisar em breve';
+       } else {
+         currentStatus = 'Ativo';
+       }
+    }
+
+    return {
+      ...item,
+      status: currentStatus,
+      customer: item.pet?.customer
+    };
+  });
+
+  if (filters?.status) {
+    return mappedData.filter(item => item.status === filters.status) as any[];
+  }
+
+  return mappedData as any[];
 }
 
 export async function updatePurchaseStatus(purchaseId: string, status: PetPurchaseStatus) {
