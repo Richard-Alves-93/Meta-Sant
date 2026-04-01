@@ -126,8 +126,8 @@ const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta, onNavig
       </div>
 
       {remainingWorkDays > 0 && (
-        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-sm text-blue-700">
+        <div className="mb-8 bg-primary/10 border-l-4 border-primary rounded-r-lg rounded-l-sm p-4 text-primary">
+          <p className="text-sm font-medium">
             <strong>Dias de trabalho restantes este mês:</strong> {remainingWorkDays}
           </p>
         </div>

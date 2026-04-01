@@ -222,12 +222,12 @@ export function WorkSettingsSection() {
         )}
 
         {/* Remaining Days Preview */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-primary/10 border-l-4 border-primary rounded-r-lg rounded-l-sm p-4 text-primary mb-6">
           <div className="flex items-center space-x-2 mb-1">
-            <Calendar className="w-5 h-5 text-blue-600" />
-            <span className="text-sm font-semibold text-blue-900">Dias de trabalho restantes este mês: {remainingDays}</span>
+            <Calendar className="w-5 h-5" />
+            <span className="text-sm font-semibold">Dias de trabalho restantes este mês: {remainingDays}</span>
           </div>
-          <p className="text-xs text-blue-700 ml-7">Cálculo automático baseado na sua jornada e feriados</p>
+          <p className="text-xs ml-7 opacity-80">Cálculo automático baseado na sua jornada e feriados</p>
         </div>
 
         {/* Save Button */}
