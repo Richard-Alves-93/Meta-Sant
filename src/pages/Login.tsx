@@ -172,15 +172,8 @@ const Login = () => {
             Google
           </button>
 
-          {isLocalhost && (
-            <button
-              onClick={handleDevBypass}
-              type="button"
-              className="w-full mt-4 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg border border-dashed border-amber-400 bg-amber-50 text-amber-700 font-medium text-sm hover:bg-amber-100 transition-colors"
-            >
-              🛠️ Testar Localmente (Bypass Dev)
-            </button>
-          )}
+
+
 
           <p className="text-xs text-muted-foreground mt-6">
             Seus dados ficam salvos na nuvem, vinculados à sua conta Google.
