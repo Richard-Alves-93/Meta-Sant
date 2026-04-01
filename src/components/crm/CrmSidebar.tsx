@@ -85,10 +85,10 @@ const CrmSidebar = ({ currentPage, onNavigate, logoUrl, isOpen, onClose }: CrmSi
           </button>
         ))}
       </nav>
-      <div className="px-4 pb-4 pt-3 flex items-center justify-between opacity-70 transition-opacity hover:opacity-100">
+      <div className="relative px-4 pb-6 pt-4 flex items-center justify-center opacity-70 transition-opacity hover:opacity-100">
         <button 
           onClick={toggleTheme}
-          className="p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+          className="absolute left-4 p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
           title={theme === 'dark' ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro'}
         >
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
