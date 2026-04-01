@@ -6,7 +6,7 @@ import DashboardPage from "@/components/crm/DashboardPage";
 import MetaModal from "@/components/crm/MetaModal";
 import LancamentoModal from "@/components/crm/LancamentoModal";
 import GoalReminderModal from "@/components/crm/GoalReminderModal";
-import { getLastCheck, setLastCheck, shouldAskNextMonthGoals, shouldForceGoalSetup } from "@/services/goalService";
+import { getConfirmedGoalsMonth, setConfirmedGoalsMonth, shouldAskNextMonthGoals, getCurrentMonthStr } from "@/services/goalService";
 import {
   fetchDatabase, addMeta, updateMeta, deleteMeta,
   addLancamento, updateLancamento, deleteLancamento,
@@ -60,7 +60,6 @@ const Index = () => {
   const [lancModalOpen, setLancModalOpen] = useState(false);
   const [editingLanc, setEditingLanc] = useState<Lancamento | null>(null);
   const [goalReminderOpen, setGoalReminderOpen] = useState(false);
-  const [goalReminderForce, setGoalReminderForce] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -88,20 +87,44 @@ const Index = () => {
   useEffect(() => {
     if (loading) return;
 
-    const today = new Date();
-    const hasGoals = db.metas.length > 0;
-    const lastCheckDate = getLastCheck();
+    const checkGoals = () => {
+      if (db.metas.length === 0) return;
 
-    if (shouldForceGoalSetup({ currentDate: today, hasCurrentMonthGoals: hasGoals })) {
-      setGoalReminderForce(true);
-      setGoalReminderOpen(true);
-      return;
-    }
+      if (shouldAskNextMonthGoals()) {
+        setGoalReminderOpen(true);
+        
+        if ('Notification' in window && Notification.permission !== 'denied') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              const currentMonth = getCurrentMonthStr();
+              const notifiedKey = 'crm_notified_month_' + currentMonth;
+              if (!localStorage.getItem(notifiedKey)) {
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification("🎯 Novo Mês! Atualize suas Metas", {
+                      body: "Chegou o dia 1. Abra o sistema para manter ou atualizar as suas metas financeiras deste novo mês.",
+                      icon: "/icon-192x192.png",
+                      vibrate: [200, 100, 200]
+                    });
+                  });
+                } else {
+                  new Notification("🎯 Novo Mês! Atualize suas Metas", {
+                    body: "Chegou o dia 1. Abra o sistema para manter ou atualizar as suas metas financeiras."
+                  });
+                }
+                localStorage.setItem(notifiedKey, 'true');
+              }
+            }
+          });
+        }
+      }
+    };
 
-    if (shouldAskNextMonthGoals({ currentDate: today, hasNextMonthGoals: hasGoals, lastCheckDate })) {
-      setGoalReminderForce(false);
-      setGoalReminderOpen(true);
-    }
+    checkGoals();
+    
+    // Checar de tempos em tempos (caso fique como aba congelada no Chrome)
+    const interval = setInterval(checkGoals, 1000 * 60 * 60);
+    return () => clearInterval(interval);
   }, [db.metas.length, loading]);
 
   const handleSaveMeta = async (nome: string, valor: number, descricao: string) => {
@@ -197,19 +220,18 @@ const Index = () => {
     }
   };
 
-  const handleGoalReminderCreate = () => {
-    setLastCheck();
+  const handleGoalReminderUpdate = () => {
+    setConfirmedGoalsMonth(getCurrentMonthStr());
     setGoalReminderOpen(false);
-    setGoalReminderForce(false);
     navigate('/metas', { replace: true });
     setEditingMeta(null);
     setMetaModalOpen(true);
   };
 
-  const handleGoalReminderLater = () => {
-    setLastCheck();
+  const handleGoalReminderKeep = () => {
+    setConfirmedGoalsMonth(getCurrentMonthStr());
     setGoalReminderOpen(false);
-    setGoalReminderForce(false);
+    toast.success("Metas renovadas para este mês com sucesso! Boas vendas!");
   };
 
   const handleExport = async () => { await exportarDadosJSON(); };
@@ -315,9 +337,8 @@ const Index = () => {
 
       <GoalReminderModal
         open={goalReminderOpen}
-        force={goalReminderForce}
-        onCreate={handleGoalReminderCreate}
-        onLater={handleGoalReminderLater}
+        onUpdate={handleGoalReminderUpdate}
+        onKeep={handleGoalReminderKeep}
       />
       <MetaModal open={metaModalOpen} onClose={() => { setMetaModalOpen(false); setEditingMeta(null); }}
         onSave={handleSaveMeta} editingMeta={editingMeta} />

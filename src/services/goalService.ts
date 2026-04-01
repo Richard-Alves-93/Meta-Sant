@@ -1,40 +1,21 @@
-import { isLastDayOfMonth, isFirstDayOfMonth } from '@/utils/date';
+const GOALS_CONFIRMED_MONTH_KEY = 'crm_confirmed_goals_month';
 
-const LAST_GOAL_CHECK_KEY = 'last_goal_check_date';
-
-export function getLastCheck(): string | null {
-  return typeof window !== 'undefined' ? localStorage.getItem(LAST_GOAL_CHECK_KEY) : null;
+export function getConfirmedGoalsMonth(): string | null {
+  return typeof window !== 'undefined' ? localStorage.getItem(GOALS_CONFIRMED_MONTH_KEY) : null;
 }
 
-export function setLastCheck() {
+export function setConfirmedGoalsMonth(monthStr: string) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(LAST_GOAL_CHECK_KEY, new Date().toDateString());
+  localStorage.setItem(GOALS_CONFIRMED_MONTH_KEY, monthStr);
 }
 
-interface ShouldAskNextMonthGoalsParams {
-  currentDate: Date;
-  hasNextMonthGoals: boolean;
-  lastCheckDate: string | null;
+export function getCurrentMonthStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-interface ShouldForceGoalSetupParams {
-  currentDate: Date;
-  hasCurrentMonthGoals: boolean;
-}
-
-export function shouldAskNextMonthGoals({
-  currentDate,
-  hasNextMonthGoals,
-  lastCheckDate,
-}: ShouldAskNextMonthGoalsParams) {
-  const today = currentDate.toDateString();
-  if (lastCheckDate === today) return false;
-  return isLastDayOfMonth(currentDate) && !hasNextMonthGoals;
-}
-
-export function shouldForceGoalSetup({
-  currentDate,
-  hasCurrentMonthGoals,
-}: ShouldForceGoalSetupParams) {
-  return isFirstDayOfMonth(currentDate) && !hasCurrentMonthGoals;
+export function shouldAskNextMonthGoals() {
+  const currentMonth = getCurrentMonthStr();
+  const confirmedMonth = getConfirmedGoalsMonth();
+  return currentMonth !== confirmedMonth;
 }
