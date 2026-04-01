@@ -73,8 +73,8 @@ const CrmSidebar = ({ currentPage, onNavigate, logoUrl, isOpen, onClose }: CrmSi
             onClick={() => onNavigate(item.page)}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all text-left
               ${currentPage === item.page
-                ? "bg-accent text-accent-foreground"
-                : "text-sidebar-foreground hover:bg-secondary"
+                ? "bg-primary/10 text-primary font-semibold"
+                : "text-sidebar-foreground hover:bg-secondary hover:text-foreground"
               }`}
           >
             {item.icon}
