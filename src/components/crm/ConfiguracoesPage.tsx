@@ -316,10 +316,10 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
                 key={section.key}
                 type="button"
                 onClick={() => setActiveTab(section.key)}
-                className={`rounded-xl px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer ${
+                className={`rounded-xl px-4 py-3 text-left text-sm transition-colors cursor-pointer ${
                   activeTab === section.key
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-transparent text-foreground hover:bg-secondary'
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'bg-transparent text-foreground hover:bg-secondary font-medium'
                 }`}
               >
                 {section.label}
