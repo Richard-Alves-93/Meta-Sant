@@ -120,6 +120,19 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
     setUploadError(null);
 
     try {
+      // Remove a logo antiga do banco de dados antes de subir a nova para evitar lixo acumulado
+      if (customLogo) {
+        try {
+          const oldFileName = customLogo.split('/').pop();
+          if (oldFileName) {
+            console.log('Solicitando remoção da logo antiga do Storage:', oldFileName);
+            await supabase.storage.from(bucketName).remove([decodeURIComponent(oldFileName)]);
+          }
+        } catch (removeErr) {
+          console.warn('Aviso: Falha ao tentar deletar a logo antiga (pode já não existir)', removeErr);
+        }
+      }
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(bucketName)
         .upload(fileName, logoFile, {
