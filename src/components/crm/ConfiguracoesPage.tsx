@@ -310,20 +310,16 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
 
       <div className="settings-container flex flex-col md:flex-row gap-6">
         <aside className="settings-menu w-full md:w-72 rounded-lg border border-border bg-card p-4 shadow-sm">
-          <div className="mb-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Seções</p>
-          </div>
-
           <div className="flex flex-col gap-2">
             {sections.map((section) => (
               <button
                 key={section.key}
                 type="button"
                 onClick={() => setActiveTab(section.key)}
-                className={`rounded-xl px-4 py-3 text-left text-sm font-medium transition-colors ${
+                className={`rounded-xl px-4 py-3 text-left text-sm font-medium transition-colors cursor-pointer ${
                   activeTab === section.key
-                    ? 'bg-slate-900 text-white'
-                    : 'bg-transparent text-foreground hover:bg-slate-100'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-transparent text-foreground hover:bg-secondary'
                 }`}
               >
                 {section.label}
