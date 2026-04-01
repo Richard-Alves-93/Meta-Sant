@@ -152,7 +152,7 @@ const Index = () => {
       });
     } catch (error: any) {
       console.error("Erro ao salvar lançamento:", error);
-      const message = error?.userMessage || error?.message || "Ocorreu um erro ao salvar o lançamento.";
+      const message = error?.userMessage || "Ocorreu um erro ao salvar o lançamento.";
       toast.error(message);
     }
   };
