@@ -74,6 +74,14 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
     [lancamentos]
   );
 
+  const topMesesAnual = useMemo(() => {
+    if (viewMode !== 'year') return [];
+    return [...vendasPorMes]
+      .filter(m => m.Vendas > 0)
+      .sort((a, b) => b.Vendas - a.Vendas)
+      .slice(0, 5);
+  }, [vendasPorMes, viewMode]);
+
   return (
     <div>
       <div className="mb-8">
@@ -205,24 +213,47 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
         </div>
 
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col">
-          <h3 className="font-semibold text-card-foreground mb-4">Top Vendas do Período</h3>
-          {topLancamentos.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Nenhum dado no período</div>
+          <h3 className="font-semibold text-card-foreground mb-4">
+            {viewMode === 'month' ? 'Top Vendas do Mês' : 'Melhores Meses'}
+          </h3>
+          {viewMode === 'month' ? (
+            topLancamentos.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Nenhum dado no período</div>
+            ) : (
+              <div className="space-y-3">
+                {topLancamentos.map((l, idx) => (
+                  <div key={l.id} className="flex items-center gap-3 bg-secondary/60 rounded-lg p-3 hover:bg-secondary transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold shadow-sm">
+                      {idx + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-card-foreground truncate">{formatDate(l.data)}</p>
+                      <p className="text-xs text-muted-foreground truncate">Lançamento Padrão</p>
+                    </div>
+                    <span className="font-semibold text-success text-sm whitespace-nowrap">{formatCurrency(l.valorLiquido)}</span>
+                  </div>
+                ))}
+              </div>
+            )
           ) : (
-            <div className="space-y-3">
-              {topLancamentos.map((l, idx) => (
-                <div key={l.id} className="flex items-center gap-3 bg-secondary/60 rounded-lg p-3 hover:bg-secondary transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold shadow-sm">
-                    {idx + 1}
+            topMesesAnual.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Nenhum dado no ano</div>
+            ) : (
+              <div className="space-y-3">
+                {topMesesAnual.map((m, idx) => (
+                  <div key={m.mes} className="flex items-center gap-3 bg-secondary/60 rounded-lg p-3 hover:bg-secondary transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold shadow-sm">
+                      {idx + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-card-foreground truncate">{m.mes} / {filterYear}</p>
+                      <p className="text-xs text-muted-foreground truncate">Faturamento Total</p>
+                    </div>
+                    <span className="font-semibold text-success text-sm whitespace-nowrap">{formatCurrency(m.Vendas)}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-card-foreground truncate">{formatDate(l.data)}</p>
-                    <p className="text-xs text-muted-foreground truncate">Lançamento Padrão</p>
-                  </div>
-                  <span className="font-semibold text-success text-sm whitespace-nowrap">{formatCurrency(l.valorLiquido)}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )
           )}
         </div>
       </div>
