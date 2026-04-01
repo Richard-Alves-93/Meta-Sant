@@ -332,8 +332,8 @@ const Index = () => {
       </main>
 
       <a id="custom-badge-cta" target="_blank" href="https://wa.me/5551991840532" rel="noopener noreferrer" 
-         className="fixed bottom-4 right-4 bg-[#25D366] text-white px-4 py-2 rounded-full no-underline font-sans text-sm font-semibold shadow-lg z-[9999] flex items-center gap-2 hover:bg-[#20bd5a] transition-colors">
-        Desenvolvido por Richard Alves
+         className="fixed bottom-4 right-4 bg-[#25D366] text-white px-3 py-1.5 rounded-full no-underline font-sans text-xs font-medium shadow-md z-[9999] transition-transform hover:scale-105">
+        Falar com Richard Alves
       </a>
 
       <GoalReminderModal
