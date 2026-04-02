@@ -29,6 +29,10 @@ const RecomprasHoje = ({ onNavigateToRecompras }: RecomprasHojeProps) => {
     loadPurchases();
   }, []);
 
+  const totalPotencial = useMemo(() => {
+    return purchases.reduce((acc, p) => acc + (p.valor || 0), 0);
+  }, [purchases]);
+
   const handleWhatsApp = async (purchase: any) => {
     const customer = purchase.customer;
     const pet = purchase.pet;
@@ -68,10 +72,6 @@ const RecomprasHoje = ({ onNavigateToRecompras }: RecomprasHojeProps) => {
       </div>
     );
   }
-
-  const totalPotencial = useMemo(() => {
-    return purchases.reduce((acc, p) => acc + (p.valor || 0), 0);
-  }, [purchases]);
 
   return (
     <div className="bg-card border border-border rounded-xl shadow-sm flex flex-col h-full overflow-hidden">
