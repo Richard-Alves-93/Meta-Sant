@@ -273,7 +273,13 @@ export async function registerRepurchase(purchaseId: string, newProductId: strin
  * Start a new purchase cycle for a pet
  * Creates initial recurring purchase record with calculated dates
  */
-export async function startNewPurchaseCycle(petId: string, productId: string, dataCompraStr: string, diasRecompra?: number) {
+export async function startNewPurchaseCycle(
+  petId: string,
+  productId: string,
+  dataCompraStr: string,
+  diasRecompra?: number,
+  diasAvisoPrevio?: number
+) {
   const user = await getAuthUser();
 
   // Validate data_compra is not empty
@@ -287,32 +293,42 @@ export async function startNewPurchaseCycle(petId: string, productId: string, da
     );
   }
 
-  const { data: product, error: prodErr } = await supabase
-    .from('products')
-    .select('*')
-    .eq('id', productId)
-    .single();
+  // Try to fetch product for accurate data, but don't fail if RLS blocks it
+  let productDias = diasRecompra || 30;
+  let productAvisoPrevio = diasAvisoPrevio || 3;
 
-  if (prodErr || !product) throw handleSupabaseError(prodErr || new Error('Product not found'), 'startNewPurchaseCycle - fetch product');
+  try {
+    const { data: product, error: prodErr } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', productId)
+      .single();
 
-  // Use provided diasRecompra, fallback to product default
-  const dias = diasRecompra || product.prazo_recompra_dias;
+    if (!prodErr && product) {
+      productDias = diasRecompra || product.prazo_recompra_dias;
+      productAvisoPrevio = diasAvisoPrevio ?? product.dias_aviso_previo;
+    } else {
+      console.warn('[startNewPurchaseCycle] Produto não encontrado via RLS, usando valores passados como parâmetro.', { productId, diasRecompra, diasAvisoPrevio });
+    }
+  } catch (fetchErr) {
+    console.warn('[startNewPurchaseCycle] Falha ao buscar produto, usando fallback.', fetchErr);
+  }
 
   const dataCompra = new Date(dataCompraStr);
   const proximaData = new Date(dataCompra);
-  proximaData.setDate(proximaData.getDate() + dias);
+  proximaData.setDate(proximaData.getDate() + productDias);
 
   const dataLembrete = new Date(proximaData);
-  dataLembrete.setDate(dataLembrete.getDate() - product.dias_aviso_previo);
+  dataLembrete.setDate(dataLembrete.getDate() - productAvisoPrevio);
 
   const { error } = await supabase.from('pet_purchases').insert({
     user_id: user.id,
     pet_id: petId,
     product_id: productId,
     data_compra: dataCompraStr,
-    dias_recompra: dias,
+    dias_recompra: productDias,
     proxima_data: proximaData.toISOString().split('T')[0],
-    dias_aviso_previo: product.dias_aviso_previo,
+    dias_aviso_previo: productAvisoPrevio,
     data_lembrete: dataLembrete.toISOString().split('T')[0],
     status: 'Ativo',
     ativo: true,
