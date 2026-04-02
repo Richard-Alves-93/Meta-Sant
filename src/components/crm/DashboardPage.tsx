@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { CrmDatabase, getLancamentosDoMes, formatCurrency, getDiasMes, calcularVendasNecessarias, Lancamento, formatDate, getRemainingWorkingDays } from "@/lib/crm-data";
+import { CrmDatabase, getLancamentosDoMes, getLancamentosMesAnterior, formatCurrency, getDiasMes, calcularVendasNecessarias, Lancamento, formatDate, getRemainingWorkingDays } from "@/lib/crm-data";
 import { parseLocalDate } from "@/utils/date";
 import KpiCard from "./KpiCard";
 import MetaCard from "./MetaCard";
@@ -39,7 +39,22 @@ const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta, onNavig
 
   const totalLiquido = lancamentosMes.reduce((s, l) => s + l.valorLiquido, 0);
   const totalDesconto = lancamentosMes.reduce((s, l) => s + l.desconto, 0);
-  const mediaDiaria = lancamentosMes.length > 0 ? totalLiquido / lancamentosMes.length : 0;
+
+  // Cálculo de Médias para Tendência
+  const hoje = new Date();
+  const diaAtual = hoje.getDate() || 1;
+  const mediaDiaria = totalLiquido / diaAtual;
+
+  const trendMedia = useMemo(() => {
+    const lancamentosAnterior = getLancamentosMesAnterior(db);
+    const totalAnterior = lancamentosAnterior.reduce((s, l) => s + l.valorLiquido, 0);
+    const diasMesAnterior = getDiasMes(new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1));
+    const mediaAnterior = totalAnterior / diasMesAnterior;
+
+    if (mediaAnterior === 0) return 0;
+    return ((mediaDiaria - mediaAnterior) / mediaAnterior) * 100;
+  }, [db, mediaDiaria]);
+
   const projecao = mediaDiaria * getDiasMes();
 
   const vendasPorDia = useMemo(() => {
@@ -149,7 +164,12 @@ const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta, onNavig
         {totalDesconto > 0 && (
           <KpiCard label="Total Desconto" value={formatCurrency(totalDesconto)} icon={<TrendingDown size={18} />} />
         )}
-        <KpiCard label="Média Diária" value={formatCurrency(mediaDiaria)} icon={<Activity size={18} />} />
+        <KpiCard
+          label="Média Diária"
+          value={formatCurrency(mediaDiaria)}
+          icon={<Activity size={18} />}
+          trend={trendMedia}
+        />
         <KpiCard label="Projeção Final" value={formatCurrency(projecao)} icon={<TrendingUp size={18} />} />
       </div>
 

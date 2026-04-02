@@ -124,17 +124,25 @@ export async function deleteLancamento(id: string) {
 // ---- Helper Functions ----
 
 export function getLancamentosDoMes(db: CrmDatabase): Lancamento[] {
-  const hoje = new Date(); // Usamos new Date() nativo só para saber que dia é hoje em tempo real
+  const hoje = new Date();
   return db.lancamentos.filter(l => {
-    // 🚨 Aqui era onde a timezone bugava e mandava vendas dia 01/3 pro final de fevereiro (02). Agora tem parse seguro de meio dia interno:
     const d = parseLocalDate(l.data);
     return d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
   });
 }
 
-export function getDiasMes(): number {
+export function getLancamentosMesAnterior(db: CrmDatabase): Lancamento[] {
   const hoje = new Date();
-  return new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+  const mesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+  return db.lancamentos.filter(l => {
+    const d = parseLocalDate(l.data);
+    return d.getMonth() === mesAnterior.getMonth() && d.getFullYear() === mesAnterior.getFullYear();
+  });
+}
+
+export function getDiasMes(data?: Date): number {
+  const d = data || new Date();
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
 }
 
 /**

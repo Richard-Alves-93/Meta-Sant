@@ -109,6 +109,7 @@ export {
   updateLancamento,
   deleteLancamento,
   getLancamentosDoMes,
+  getLancamentosMesAnterior,
   getDiasMes,
   calcularVendasNecessarias,
 } from '@/services/saleService';
