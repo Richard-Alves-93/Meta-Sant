@@ -13,24 +13,45 @@ interface MetaModalProps {
   editingMeta?: Meta | null;
 }
 
+// Formata centavos inteiros para string "R$ 1.234,56"
+function formatCurrencyInput(cents: number): string {
+  if (cents === 0) return '';
+  const reais = cents / 100;
+  return reais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Extrai apenas dígitos e converte para centavos
+function parseCurrencyInput(raw: string): number {
+  const digits = raw.replace(/\D/g, '');
+  return parseInt(digits, 10) || 0;
+}
+
 const MetaModal = ({ open, onClose, onSave, editingMeta }: MetaModalProps) => {
   const [nome, setNome] = useState("");
-  const [valor, setValor] = useState("");
+  const [valorCents, setValorCents] = useState(0);
   const [descricao, setDescricao] = useState("");
 
   useEffect(() => {
     if (editingMeta) {
       setNome(editingMeta.nome);
-      setValor(String(editingMeta.valor));
+      setValorCents(Math.round(editingMeta.valor * 100));
       setDescricao(editingMeta.descricao);
     } else {
-      setNome(""); setValor(""); setDescricao("");
+      setNome(""); setValorCents(0); setDescricao("");
     }
   }, [editingMeta, open]);
 
+  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const cents = parseCurrencyInput(e.target.value);
+    // Limitar a valores razoáveis (até 999.999.999,99)
+    if (cents <= 99999999999) {
+      setValorCents(cents);
+    }
+  };
+
   const handleSave = () => {
-    const v = parseFloat(valor);
-    if (!nome.trim() || !v || v <= 0) return;
+    const v = valorCents / 100;
+    if (!nome.trim() || v <= 0) return;
     onSave(nome.trim(), v, descricao.trim());
   };
 
@@ -47,7 +68,13 @@ const MetaModal = ({ open, onClose, onSave, editingMeta }: MetaModalProps) => {
           </div>
           <div className="space-y-2">
             <Label>Valor da Meta (R$)</Label>
-            <Input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="230000" step="0.01" />
+            <Input
+              type="text"
+              inputMode="numeric"
+              value={formatCurrencyInput(valorCents)}
+              onChange={handleValorChange}
+              placeholder="0,00"
+            />
           </div>
           <div className="space-y-2">
             <Label>Descrição (opcional)</Label>
@@ -64,3 +91,4 @@ const MetaModal = ({ open, onClose, onSave, editingMeta }: MetaModalProps) => {
 };
 
 export default MetaModal;
+
