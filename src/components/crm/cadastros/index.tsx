@@ -76,6 +76,7 @@ const CadastrosPage = () => {
             <PetsTab
               pets={pets}
               customers={customers}
+              products={products}
               loading={loading}
               onSavePet={handleSavePet}
               onDeletePet={handleDeletePet}

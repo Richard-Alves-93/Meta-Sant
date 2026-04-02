@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pet, Customer } from "@/lib/crm-data";
+import { Pet, Customer, Product } from "@/lib/crm-data";
 import { Plus } from "lucide-react";
 import PetModal from "../../PetModal";
 import { PetsTable } from "./PetsTable";
@@ -7,8 +7,9 @@ import { PetsTable } from "./PetsTable";
 interface PetsTabProps {
   pets: Pet[];
   customers: Customer[];
+  products: Product[];
   loading: boolean;
-  onSavePet: (pet: Omit<Pet, 'id'>, id?: string) => Promise<void>;
+  onSavePet: (pet: Omit<Pet, 'id'>, id?: string, purchasesList?: any[]) => Promise<void>;
   onDeletePet: (id: string) => Promise<void>;
 }
 
@@ -20,6 +21,7 @@ interface PetsTabProps {
 export function PetsTab({
   pets,
   customers,
+  products,
   loading,
   onSavePet,
   onDeletePet
@@ -41,8 +43,8 @@ export function PetsTab({
     setEditingPet(null);
   };
 
-  const handleSave = async (pet: Omit<Pet, 'id'>) => {
-    await onSavePet(pet, editingPet?.id);
+  const handleSave = async (pet: Omit<Pet, 'id'>, purchasesList?: any[]) => {
+    await onSavePet(pet, editingPet?.id, purchasesList);
     handleCloseModal();
   };
 
@@ -72,6 +74,7 @@ export function PetsTab({
         onSave={handleSave}
         editingPet={editingPet}
         customers={customers}
+        products={products}
       />
     </>
   );

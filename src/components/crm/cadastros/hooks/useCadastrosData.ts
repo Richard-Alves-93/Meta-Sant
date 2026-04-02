@@ -25,7 +25,7 @@ interface UseCadastrosDataReturn {
   loadData: () => Promise<void>;
   handleSaveCliente: (customer: Omit<Customer, 'id'>, id?: string) => Promise<void>;
   handleDeleteCliente: (id: string) => Promise<void>;
-  handleSavePet: (pet: Omit<Pet, 'id'>, id?: string) => Promise<void>;
+  handleSavePet: (pet: Omit<Pet, 'id'>, id?: string, purchasesList?: { product_id: string, product_name: string, categoria: string, prazo_recompra: number, data_compra: string, valor: number }[]) => Promise<void>;
   handleDeletePet: (id: string) => Promise<void>;
   handleSaveProduto: (product: Omit<Product, 'id'>, id?: string) => Promise<void>;
   handleDeleteProduto: (id: string) => Promise<void>;
@@ -124,16 +124,50 @@ export function useCadastrosData(): UseCadastrosDataReturn {
   }, []);
 
   // ---- Handlers: Pets ----
-  const handleSavePet = useCallback(async (pet: Omit<Pet, 'id'>, id?: string) => {
+  const handleSavePet = useCallback(async (
+    pet: Omit<Pet, 'id'>,
+    id?: string,
+    purchasesList?: { product_id: string, product_name: string, categoria: string, prazo_recompra: number, data_compra: string, valor: number }[]
+  ) => {
     try {
       const sanitized = sanitizePetData(pet);
+      let targetPetId = id;
+
       if (id) {
         await updatePet(id, sanitized);
         toast.success("Pet atualizado!");
       } else {
-        await addPet(sanitized);
+        const newPet = await addPet(sanitized);
+        if (!newPet || !newPet.id) throw new Error("Erro ao criar pet - sem ID");
+        targetPetId = newPet.id;
         toast.success("Pet adicionado!");
       }
+
+      // Se houver compras vinculadas (apenas para novos pets ou se explicitamente enviado)
+      if (purchasesList && purchasesList.length > 0 && targetPetId) {
+        console.log(`Salvando ${purchasesList.length} compras para o pet ${targetPetId}...`);
+        for (const p of purchasesList) {
+          if (!p.product_id && !p.product_name.trim()) continue;
+
+          let productId = p.product_id;
+          if (!productId) {
+            const product = await findOrCreateProduct(p.product_name.trim(), p.categoria || null);
+            if (product && product.id) productId = product.id;
+          }
+
+          if (productId) {
+            await startNewPurchaseCycle(
+              targetPetId,
+              productId,
+              p.data_compra,
+              p.prazo_recompra,
+              undefined,
+              p.valor
+            );
+          }
+        }
+      }
+
       setEditingPet(null);
       await loadData();
     } catch (error) {
