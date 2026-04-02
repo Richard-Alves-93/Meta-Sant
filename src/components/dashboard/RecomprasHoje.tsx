@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { fetchPurchases, PetPurchase, Customer, Pet, Product, registerWhatsAppLog } from "@/lib/crm-data";
 import { Bell, MessageCircle, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
@@ -69,6 +69,10 @@ const RecomprasHoje = ({ onNavigateToRecompras }: RecomprasHojeProps) => {
     );
   }
 
+  const totalPotencial = useMemo(() => {
+    return purchases.reduce((acc, p) => acc + (p.valor || 0), 0);
+  }, [purchases]);
+
   return (
     <div className="bg-card border border-border rounded-xl shadow-sm flex flex-col h-full overflow-hidden">
       <div className="p-5 border-b border-border flex items-center justify-between bg-primary/5">
@@ -82,6 +86,17 @@ const RecomprasHoje = ({ onNavigateToRecompras }: RecomprasHojeProps) => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+        {totalPotencial > 0 && (
+          <div className="mb-2 p-3 bg-primary/5 border border-primary/10 rounded-lg">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-1">
+              Faturamento Potencial de Hoje
+            </p>
+            <p className="text-xl font-bold text-primary">
+              {totalPotencial.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </p>
+          </div>
+        )}
+
         {purchases.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground py-8">
             <Bell size={40} className="mb-3 opacity-20" />
