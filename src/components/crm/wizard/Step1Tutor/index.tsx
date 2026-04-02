@@ -14,7 +14,27 @@ interface Step1TutorProps {
  * ~80 lines of clean, reusable JSX
  */
 
+const formatPhone = (value: string) => {
+  if (!value) return "";
+  const digits = value.replace(/\D/g, "");
+  if (digits.length <= 10) {
+    return digits
+      .replace(/(\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{4})(\d)/, "$1-$2")
+      .slice(0, 14);
+  }
+  return digits
+    .replace(/(\d{2})(\d)/, "($1) $2")
+    .replace(/(\d{5})(\d)/, "$1-$2")
+    .slice(0, 15);
+};
+
 export function Step1Tutor({ tutor, onTutorChange }: Step1TutorProps) {
+  const handlePhoneChange = (field: 'whatsapp' | 'telefone', value: string) => {
+    const formatted = formatPhone(value);
+    onTutorChange(field, formatted);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
@@ -50,7 +70,7 @@ export function Step1Tutor({ tutor, onTutorChange }: Step1TutorProps) {
               id="tutor-whatsapp"
               placeholder="Ex: (11) 98765-4321"
               value={tutor.whatsapp}
-              onChange={(e) => onTutorChange('whatsapp', e.target.value)}
+              onChange={(e) => handlePhoneChange('whatsapp', e.target.value)}
               className="mt-2"
             />
           </div>
@@ -63,7 +83,7 @@ export function Step1Tutor({ tutor, onTutorChange }: Step1TutorProps) {
               id="tutor-telefone"
               placeholder="Ex: (11) 3456-7890"
               value={tutor.telefone}
-              onChange={(e) => onTutorChange('telefone', e.target.value)}
+              onChange={(e) => handlePhoneChange('telefone', e.target.value)}
               className="mt-2"
             />
           </div>

@@ -116,7 +116,7 @@ export function useWizardState(onClose: () => void) {
     }
 
     setStep(s => s + 1);
-  }, [step, tutor.nome, pets]);
+  }, [step, tutor, pets]);
 
   const prevStep = useCallback(() => {
     setStep(s => s - 1);
