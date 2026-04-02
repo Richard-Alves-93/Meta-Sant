@@ -29,7 +29,7 @@ const CrmSidebar = ({ currentPage, onNavigate, logoUrl, isOpen, onClose }: CrmSi
     <>
       {/* Mobile Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={onClose}
         />
@@ -41,16 +41,16 @@ const CrmSidebar = ({ currentPage, onNavigate, logoUrl, isOpen, onClose }: CrmSi
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         <div className="flex items-center justify-between px-6 py-6 h-[88px]">
-          <div 
+          <div
             className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => onNavigate("dashboard")}
             title="Ir para o Dashboard"
           >
             {logoUrl ? (
-              <img 
-                src={logoUrl} 
-                alt="Logo CRM" 
-                className="max-h-12 w-auto max-w-full object-contain" 
+              <img
+                src={logoUrl}
+                alt="Logo CRM"
+                className="max-h-12 w-auto max-w-full object-contain"
               />
             ) : (
               <>
@@ -61,7 +61,7 @@ const CrmSidebar = ({ currentPage, onNavigate, logoUrl, isOpen, onClose }: CrmSi
               </>
             )}
           </div>
-          <button 
+          <button
             className="md:hidden text-muted-foreground hover:text-foreground"
             onClick={onClose}
           >
@@ -69,33 +69,33 @@ const CrmSidebar = ({ currentPage, onNavigate, logoUrl, isOpen, onClose }: CrmSi
           </button>
         </div>
 
-      <nav className="flex flex-col gap-1 px-3 flex-1">
-        {navItems.map((item) => (
-          <button
-            key={item.page}
-            onClick={() => onNavigate(item.page)}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all text-left
+        <nav className="flex flex-col gap-1 px-3 flex-1">
+          {navItems.map((item) => (
+            <button
+              key={item.page}
+              onClick={() => onNavigate(item.page)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all text-left
               ${currentPage === item.page
-                ? "bg-primary/10 text-primary font-semibold"
-                : "text-sidebar-foreground hover:bg-secondary hover:text-foreground"
-              }`}
+                  ? "bg-primary/10 text-primary font-semibold"
+                  : "text-sidebar-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <div className="relative px-4 pb-6 pt-4 flex items-center justify-center opacity-70 transition-opacity hover:opacity-100">
+          <button
+            onClick={toggleTheme}
+            className="absolute left-4 p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            title={theme === 'dark' ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro'}
           >
-            {item.icon}
-            {item.label}
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
-        ))}
-      </nav>
-      <div className="relative px-4 pb-6 pt-4 flex items-center justify-center opacity-70 transition-opacity hover:opacity-100">
-        <button 
-          onClick={toggleTheme}
-          className="absolute left-4 p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-          title={theme === 'dark' ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro'}
-        >
-          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-        <span className="text-xs text-muted-foreground" title="Versão do sistema">v{APP_VERSION}</span>
-      </div>
-    </aside>
+          <span className="text-xs text-muted-foreground" title="Versão do sistema">V {APP_VERSION}</span>
+        </div>
+      </aside>
     </>
   );
 };
