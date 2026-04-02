@@ -109,9 +109,11 @@ const LancamentosPage = ({ db, onAdd, onEdit, onDelete, onOpenModal }: Lancament
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+      <div className={`grid grid-cols-1 ${totalDesconto > 0 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-6 mb-6`}>
         <KpiCard label="Total Bruto" value={formatCurrency(totalBruto)} icon={<DollarSign size={18} />} />
-        <KpiCard label="Total Desconto" value={formatCurrency(totalDesconto)} icon={<TrendingDown size={18} />} />
+        {totalDesconto > 0 && (
+          <KpiCard label="Total Desconto" value={formatCurrency(totalDesconto)} icon={<TrendingDown size={18} />} />
+        )}
         <KpiCard label="Total Líquido" value={formatCurrency(totalLiquido)} icon={<Wallet size={18} />} />
       </div>
 

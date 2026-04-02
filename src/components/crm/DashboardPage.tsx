@@ -144,9 +144,11 @@ const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta, onNavig
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${totalDesconto > 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6 mb-8`}>
         <KpiCard label="Total Líquido" value={formatCurrency(totalLiquido)} icon={<DollarSign size={18} />} />
-        <KpiCard label="Total Desconto" value={formatCurrency(totalDesconto)} icon={<TrendingDown size={18} />} />
+        {totalDesconto > 0 && (
+          <KpiCard label="Total Desconto" value={formatCurrency(totalDesconto)} icon={<TrendingDown size={18} />} />
+        )}
         <KpiCard label="Média Diária" value={formatCurrency(mediaDiaria)} icon={<Activity size={18} />} />
         <KpiCard label="Projeção Final" value={formatCurrency(projecao)} icon={<TrendingUp size={18} />} />
       </div>
