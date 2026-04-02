@@ -32,7 +32,7 @@ interface UseCadastrosDataReturn {
   handleSaveCadastroCompleto: (
     tutor: Omit<Customer, 'id'>,
     petsList: Omit<Pet, 'id' | 'customer_id'>[],
-    purchasesList: {petIndex: number, product_id: string, product_name: string, categoria: string, prazo_recompra: number, data_compra: string, valor: number}[]
+    purchasesList: { petIndex: number, product_id: string, product_name: string, categoria: string, prazo_recompra: number, data_compra: string, valor: number }[]
   ) => Promise<void>;
 
   // UI helpers
@@ -110,11 +110,11 @@ export function useCadastrosData(): UseCadastrosDataReturn {
     if (!confirm("Tem certeza que deseja remover este tutor? Pets vinculados também serão removidos.")) return;
     try {
       await deleteCustomer(id);
-      
+
       // Atualização de estado usando um novo array (map marcando inativo)
       setCustomers(prev => prev.map(c => c.id === id ? { ...c, ativo: false } : c));
       setPets(prev => prev.map(p => p.customer_id === id ? { ...p, ativo: false } : p));
-      
+
       toast.success("Tutor removido!");
       // Nao usar loadData aqui para uma experiencia instantanea sem recarregamento
     } catch (error) {
@@ -146,10 +146,10 @@ export function useCadastrosData(): UseCadastrosDataReturn {
     if (!confirm("Tem certeza que deseja remover este pet?")) return;
     try {
       await deletePet(id);
-      
+
       // Atualização com novo array mapeado
       setPets(prev => prev.map(p => p.id === id ? { ...p, ativo: false } : p));
-      
+
       toast.success("Pet removido!");
     } catch (error) {
       console.error(error);
@@ -179,10 +179,10 @@ export function useCadastrosData(): UseCadastrosDataReturn {
     if (!confirm("Tem certeza que deseja remover este produto? O histórico de compras será mantido, mas não será possível vinculá-lo a novas.")) return;
     try {
       await deleteProduct(id);
-      
+
       // Atualização de estado limpa usando map
       setProducts(prev => prev.map(p => p.id === id ? { ...p, ativo: false } : p));
-      
+
       toast.success("Produto removido!");
     } catch (error) {
       console.error(error);
@@ -194,7 +194,7 @@ export function useCadastrosData(): UseCadastrosDataReturn {
   const handleSaveCadastroCompleto = useCallback(async (
     tutor: Omit<Customer, 'id'>,
     petsList: Omit<Pet, 'id' | 'customer_id'>[],
-    purchasesList: {petIndex: number, product_id: string, product_name: string, categoria: string, prazo_recompra: number, data_compra: string, valor: number}[]
+    purchasesList: { petIndex: number, product_id: string, product_name: string, categoria: string, prazo_recompra: number, data_compra: string, valor: number }[]
   ) => {
     try {
       console.log("=== Iniciando cadastro completo ===");
@@ -293,7 +293,14 @@ export function useCadastrosData(): UseCadastrosDataReturn {
         // Salvar ciclo de compra com prazo_recompra explícito
         // (Não registramos lançamentos financeiros aqui; faturamento é controlado diariamente)
         console.log(`Criando ciclo de compra para pet ${targetPet.nome}...`);
-        await startNewPurchaseCycle(targetPet.id, productId, purchase.data_compra, purchase.prazo_recompra);
+        await startNewPurchaseCycle(
+          targetPet.id,
+          productId,
+          purchase.data_compra,
+          purchase.prazo_recompra,
+          undefined, // diasAvisoPrevio (será pego do produto ou fallback 3)
+          purchase.valor
+        );
 
         comprasCount++;
         console.log(`✓ Compra ${i + 1} criada com sucesso`);

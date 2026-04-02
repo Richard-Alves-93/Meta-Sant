@@ -88,16 +88,29 @@ export function useWizardState(onClose: () => void) {
 
   const nextStep = useCallback(() => {
     // Validar step 1
-    if (step === 1 && !tutor.nome.trim()) {
-      toast.error("O nome do tutor é obrigatório.");
-      return;
+    if (step === 1) {
+      if (!tutor.nome.trim()) {
+        toast.error("O nome do tutor é obrigatório.");
+        return;
+      }
+      if (!tutor.whatsapp.trim()) {
+        toast.error("O WhatsApp do tutor é obrigatório.");
+        return;
+      }
     }
 
     // Validar step 2
     if (step === 2) {
-      const emptyPet = pets.find(p => !p.nome.trim());
-      if (emptyPet) {
-        toast.error("Todos os pets devem ter pelo menos o nome preenchido.");
+      const invalidPet = pets.find(p =>
+        !p.nome.trim() ||
+        !p.especie ||
+        !p.raca.trim() ||
+        !p.sexo ||
+        !p.porte
+      );
+
+      if (invalidPet) {
+        toast.error("Nome, Espécie, Raça, Sexo e Porte são obrigatórios para todos os pets.");
         return;
       }
     }

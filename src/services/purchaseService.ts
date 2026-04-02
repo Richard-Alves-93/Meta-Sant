@@ -278,7 +278,8 @@ export async function startNewPurchaseCycle(
   productId: string,
   dataCompraStr: string,
   diasRecompra?: number,
-  diasAvisoPrevio?: number
+  diasAvisoPrevio?: number,
+  valor?: number
 ) {
   const user = await getAuthUser();
 
@@ -332,7 +333,8 @@ export async function startNewPurchaseCycle(
     data_lembrete: dataLembrete.toISOString().split('T')[0],
     status: 'Ativo',
     ativo: true,
-    purchase_history_id: null
+    purchase_history_id: null,
+    valor: valor || null
   });
 
   if (error) throw handleSupabaseError(error, 'startNewPurchaseCycle - insert');

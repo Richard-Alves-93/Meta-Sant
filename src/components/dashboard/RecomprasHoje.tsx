@@ -41,7 +41,7 @@ const RecomprasHoje = ({ onNavigateToRecompras }: RecomprasHojeProps) => {
 
     const phone = (customer.whatsapp || customer.telefone).replace(/\D/g, '');
     let template = product?.mensagem_padrao || "Olá {tutor}, a reposição do(a) {produto} do(a) {pet} está próxima! Quer que eu já separe para você?";
-    
+
     template = template
       .replace('{tutor}', customer.nome)
       .replace('{pet}', pet?.nome || 'seu pet')
@@ -103,12 +103,18 @@ const RecomprasHoje = ({ onNavigateToRecompras }: RecomprasHojeProps) => {
                   </span>
                 </div>
               </div>
-              
-              <div className="text-sm text-foreground mb-3 truncate" title={p.product?.nome}>
+
+              <div className="text-sm text-foreground mb-1 truncate" title={p.product?.nome}>
                 <span className="text-muted-foreground">Produto:</span> {p.product?.nome || '?'}
               </div>
 
-              <button 
+              {p.valor && p.valor > 0 && (
+                <div className="text-xs text-muted-foreground mb-3">
+                  Último valor: <span className="text-foreground font-medium">{p.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                </div>
+              )}
+
+              <button
                 onClick={() => handleWhatsApp(p)}
                 className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-semibold py-2 rounded-md transition-colors"
                 title="Enviar mensagem no WhatsApp"
@@ -120,7 +126,7 @@ const RecomprasHoje = ({ onNavigateToRecompras }: RecomprasHojeProps) => {
         )}
       </div>
 
-      <button 
+      <button
         onClick={onNavigateToRecompras}
         className="w-full p-3 border-t border-border bg-secondary/30 hover:bg-secondary/70 text-sm font-medium text-foreground transition-colors flex items-center justify-center gap-2"
       >

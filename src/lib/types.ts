@@ -69,6 +69,7 @@ export interface PetPurchase {
   data_lembrete: string;
   status: PetPurchaseStatus;
   purchase_history_id: string | null;
+  valor?: number;
   ativo?: boolean;
 
   // Relations for joining data

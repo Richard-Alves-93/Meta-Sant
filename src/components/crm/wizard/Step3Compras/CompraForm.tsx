@@ -24,6 +24,19 @@ interface CompraFormProps {
  * Only renders when own data changes
  */
 
+// Formata centavos inteiros para string "1.234,56"
+function formatCurrencyInput(cents: number): string {
+  if (cents === 0) return '';
+  const reais = cents / 100;
+  return reais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Extrai apenas dígitos e converte para centavos
+function parseCurrencyInput(raw: string): number {
+  const digits = raw.replace(/\D/g, '');
+  return parseInt(digits, 10) || 0;
+}
+
 function CompraFormComponent({
   purchase,
   index,
@@ -161,13 +174,15 @@ function CompraFormComponent({
             </Label>
             <Input
               id={`purchase-${index}-valor`}
-              type="number"
-              step="0.01"
-              min="0"
-              value={purchase.valor || ''}
-              onChange={(e) => onChange(index, 'valor', parseFloat(e.target.value) || 0)}
+              type="text"
+              inputMode="numeric"
+              value={formatCurrencyInput(Math.round((purchase.valor || 0) * 100))}
+              onChange={(e) => {
+                const cents = parseCurrencyInput(e.target.value);
+                onChange(index, 'valor', cents / 100);
+              }}
               className="mt-1 h-8"
-              placeholder="0.00"
+              placeholder="0,00"
             />
           </div>
         </div>
