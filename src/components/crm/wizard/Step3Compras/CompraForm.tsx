@@ -13,6 +13,7 @@ interface CompraFormProps {
   pets: WizardPet[];
   products: Product[];
   onChange: (index: number, field: keyof WizardPurchase, value: any) => void;
+  onUpdateFields: (index: number, fields: Partial<WizardPurchase>) => void;
   onRemove: (index: number) => void;
   showRemove: boolean;
 }
@@ -29,18 +30,18 @@ function CompraFormComponent({
   pets,
   products,
   onChange,
+  onUpdateFields,
   onRemove,
   showRemove
 }: CompraFormProps) {
   const handleProductSelect = (productId: string, productName: string) => {
-    onChange(index, 'product_id', productId);
-    onChange(index, 'product_name', productName);
-
-    // Auto-fill prazo_recompra from product
     const selectedProduct = products.find(p => p.id === productId);
-    if (selectedProduct) {
-      onChange(index, 'prazo_recompra', selectedProduct.prazo_recompra_dias);
-    }
+    // Atomic update: set all product-related fields in a single state update
+    onUpdateFields(index, {
+      product_id: productId,
+      product_name: productName,
+      ...(selectedProduct ? { prazo_recompra: selectedProduct.prazo_recompra_dias } : {})
+    });
   };
 
   const filteredProducts = products.filter(p => !purchase.categoria || p.categoria === purchase.categoria);
@@ -153,7 +154,7 @@ function CompraFormComponent({
               placeholder="30"
             />
           </div>
-          
+
           <div>
             <Label htmlFor={`purchase-${index}-valor`} className="text-xs font-medium">
               Valor (R$)

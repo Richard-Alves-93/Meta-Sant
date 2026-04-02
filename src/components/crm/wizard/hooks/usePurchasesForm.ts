@@ -40,6 +40,16 @@ export function usePurchasesForm(
     setPurchases(newPurchases);
   }, [purchases, setPurchases]);
 
+  // Atomic multi-field update to prevent React batching race conditions
+  const updatePurchaseFields = useCallback((index: number, fields: Partial<WizardPurchase>) => {
+    const newPurchases = [...purchases];
+    newPurchases[index] = {
+      ...newPurchases[index],
+      ...fields
+    };
+    setPurchases(newPurchases);
+  }, [purchases, setPurchases]);
+
   const validatePurchases = useCallback(() => {
     for (let i = 0; i < purchases.length; i++) {
       const p = purchases[i];
@@ -72,5 +82,5 @@ export function usePurchasesForm(
     return true;
   }, [purchases, petCount]);
 
-  return { addPurchaseForm, removePurchaseForm, handlePurchaseChange, validatePurchases };
+  return { addPurchaseForm, removePurchaseForm, handlePurchaseChange, updatePurchaseFields, validatePurchases };
 }

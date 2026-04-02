@@ -9,6 +9,7 @@ interface Step3ComprasProps {
   pets: WizardPet[];
   products: Product[];
   onChange: (index: number, field: keyof WizardPurchase, value: any) => void;
+  onUpdateFields: (index: number, fields: Partial<WizardPurchase>) => void;
   onAddPurchase: () => void;
   onRemovePurchase: (index: number) => void;
 }
@@ -24,6 +25,7 @@ export function Step3Compras({
   pets,
   products,
   onChange,
+  onUpdateFields,
   onAddPurchase,
   onRemovePurchase
 }: Step3ComprasProps) {
@@ -48,6 +50,7 @@ export function Step3Compras({
             pets={pets}
             products={products}
             onChange={onChange}
+            onUpdateFields={onUpdateFields}
             onRemove={onRemovePurchase}
             showRemove={purchases.length > 1}
           />

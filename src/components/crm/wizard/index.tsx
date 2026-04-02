@@ -65,7 +65,7 @@ export default function WizardCadastroModal({
     setPurchases
   );
 
-  const { addPurchaseForm, removePurchaseForm, handlePurchaseChange } = usePurchasesForm(
+  const { addPurchaseForm, removePurchaseForm, handlePurchaseChange, updatePurchaseFields } = usePurchasesForm(
     purchases,
     setPurchases,
     pets.length
@@ -87,6 +87,13 @@ export default function WizardCadastroModal({
         return;
       }
 
+      // Validate at least one product is filled
+      const validPurchases = purchases.filter(p => p.product_id || p.product_name.trim());
+      if (validPurchases.length === 0) {
+        toast.error("Adicione pelo menos um produto no passo de Compras Recorrentes.");
+        return;
+      }
+
       // Call parent handler
       await onSaveCompleto(
         {
@@ -97,7 +104,7 @@ export default function WizardCadastroModal({
           observacoes: tutor.observacoes
         },
         validPets,
-        purchases.filter(p => p.product_id || p.product_name.trim())
+        validPurchases
       );
 
       // Success: close and reset
@@ -140,6 +147,7 @@ export default function WizardCadastroModal({
               pets={pets}
               products={products}
               onChange={handlePurchaseChange}
+              onUpdateFields={updatePurchaseFields}
               onAddPurchase={addPurchaseForm}
               onRemovePurchase={removePurchaseForm}
             />
