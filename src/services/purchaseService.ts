@@ -14,12 +14,20 @@ export async function fetchPetPurchases(): Promise<PetPurchase[]> {
     .from('pet_purchases')
     .select(`
       *,
-      pet:pets(*),
+      pet:pets(
+        *,
+        customer:customers(*)
+      ),
       product:products(*)
     `)
     .order('proxima_data', { ascending: true });
   if (error) throw error;
-  return data as PetPurchase[];
+
+  // Map internal nested customer object to top level for frontend compatibility
+  return data.map((d: any) => ({
+    ...d,
+    customer: d.pet?.customer || null
+  })) as PetPurchase[];
 }
 
 export async function addPetPurchase(purchase: Omit<PetPurchase, 'id' | 'pet' | 'product'>) {
@@ -80,23 +88,23 @@ export async function fetchPurchases(filters?: { status?: PetPurchaseStatus }): 
   // Calcula dinamicamente o status no front end (Avisar Hoje e Avisar em Breve <= 7 dias)
   const mappedData = (data || []).map(item => {
     let currentStatus = item.status;
-    
+
     if (!['Recompra registrada', 'Trocado', 'Cancelado', 'Notificado'].includes(currentStatus) && item.proxima_data) {
-       const proxDate = new Date(item.proxima_data);
-       const proxDataLocal = new Date(proxDate.valueOf() + proxDate.getTimezoneOffset() * 60 * 1000);
-       proxDataLocal.setHours(0, 0, 0, 0);
-       
-       const diffDays = Math.round((proxDataLocal.getTime() - today.getTime()) / (1000 * 3600 * 24));
-       
-       if (diffDays < 0) {
-         currentStatus = 'Vencido';
-       } else if (diffDays === 0) {
-         currentStatus = 'Avisar hoje';
-       } else if (diffDays <= 7) {
-         currentStatus = 'Avisar em breve';
-       } else {
-         currentStatus = 'Ativo';
-       }
+      const proxDate = new Date(item.proxima_data);
+      const proxDataLocal = new Date(proxDate.valueOf() + proxDate.getTimezoneOffset() * 60 * 1000);
+      proxDataLocal.setHours(0, 0, 0, 0);
+
+      const diffDays = Math.round((proxDataLocal.getTime() - today.getTime()) / (1000 * 3600 * 24));
+
+      if (diffDays < 0) {
+        currentStatus = 'Vencido';
+      } else if (diffDays === 0) {
+        currentStatus = 'Avisar hoje';
+      } else if (diffDays <= 7) {
+        currentStatus = 'Avisar em breve';
+      } else {
+        currentStatus = 'Ativo';
+      }
     }
 
     return {

@@ -218,41 +218,41 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
       try {
         const content = event.target?.result as string;
         const backup = JSON.parse(content);
-        
+
         let metasToRestore = [];
         let lancamentosToRestore = [];
 
         // Relax format checking
         if (backup.versao || backup.db || backup.metas || backup.lancamentos) {
-            // Restore configs
-            if (backup.config) {
-                if (backup.config.logo) {
-                    localStorage.setItem('crm_custom_logo', backup.config.logo);
-                    onLogoChange(backup.config.logo);
-                }
-                if (backup.config.primaryColor) {
-                    const color = backup.config.primaryColor;
-                    setPrimaryColor(color);
-                    localStorage.setItem('crm_custom_primary_color', color);
-                    document.documentElement.style.setProperty('--primary', hexToHslStr(color));
-                    document.documentElement.style.setProperty('--ring', hexToHslStr(color));
-                    document.documentElement.style.setProperty('--sidebar-primary', hexToHslStr(color));
-                    document.documentElement.style.setProperty('--sidebar-ring', hexToHslStr(color));
-                }
+          // Restore configs
+          if (backup.config) {
+            if (backup.config.logo) {
+              localStorage.setItem('crm_custom_logo', backup.config.logo);
+              onLogoChange(backup.config.logo);
             }
-            
-            if (backup.db) {
-              metasToRestore = backup.db.metas || [];
-              lancamentosToRestore = backup.db.lancamentos || [];
-            } else {
-              metasToRestore = backup.metas || [];
-              lancamentosToRestore = backup.lancamentos || [];
+            if (backup.config.primaryColor) {
+              const color = backup.config.primaryColor;
+              setPrimaryColor(color);
+              localStorage.setItem('crm_custom_primary_color', color);
+              document.documentElement.style.setProperty('--primary', hexToHslStr(color));
+              document.documentElement.style.setProperty('--ring', hexToHslStr(color));
+              document.documentElement.style.setProperty('--sidebar-primary', hexToHslStr(color));
+              document.documentElement.style.setProperty('--sidebar-ring', hexToHslStr(color));
             }
+          }
+
+          if (backup.db) {
+            metasToRestore = backup.db.metas || [];
+            lancamentosToRestore = backup.db.lancamentos || [];
+          } else {
+            metasToRestore = backup.metas || [];
+            lancamentosToRestore = backup.lancamentos || [];
+          }
         } else if (Array.isArray(backup) && backup.length > 0 && backup[0].hasOwnProperty('valorBruto')) {
-            // Very old pure array format just in case
-            lancamentosToRestore = backup;
+          // Very old pure array format just in case
+          lancamentosToRestore = backup;
         } else {
-            throw new Error("Formato de arquivo irreconhecível.");
+          throw new Error("Formato de arquivo irreconhecível.");
         }
 
         // Delete existing data line by line
@@ -277,7 +277,7 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
         console.error("Erro ao importar backup:", err);
         toast.error(`Erro ao importar: ${err?.message || "O arquivo não pôde ser processado."}`);
       }
-      
+
       if (e.target) e.target.value = '';
     };
     reader.readAsText(file);
@@ -316,11 +316,10 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
                 key={section.key}
                 type="button"
                 onClick={() => setActiveTab(section.key)}
-                className={`rounded-xl px-4 py-3 text-left text-sm transition-colors cursor-pointer ${
-                  activeTab === section.key
+                className={`rounded-xl px-4 py-3 text-left text-sm transition-colors cursor-pointer ${activeTab === section.key
                     ? 'bg-primary/10 text-primary font-semibold'
                     : 'bg-transparent text-foreground hover:bg-secondary font-medium'
-                }`}
+                  }`}
               >
                 {section.label}
               </button>
@@ -330,7 +329,6 @@ const ConfiguracoesPage = ({ db, onRefresh, customLogo, onLogoChange }: Configur
 
         <main className="settings-content flex-1 rounded-lg border border-border bg-card p-6 shadow-sm overflow-y-auto min-h-[520px]">
           <div className="mb-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground mb-2">Configurações</p>
             <h2 className="text-2xl font-semibold text-foreground mb-2">{activeSectionTitle}</h2>
             <p className="text-sm text-muted-foreground max-w-2xl">
               Personalize e mantenha o sistema sob controle com seções claras e foco no que importa.
