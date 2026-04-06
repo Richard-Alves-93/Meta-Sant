@@ -58,7 +58,7 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
 
   const vendasPorMes = useMemo(() => {
     if (viewMode !== 'year') return [];
-    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     const metaPrincipal = db.metas[0]?.valor || 0;
 
     return meses.map((nome, i) => {
@@ -227,11 +227,9 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
                       {idx + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Lançamento</p>
-                      <p className="text-sm font-semibold text-card-foreground">{formatDate(l.data)}</p>
-                    </div>
-                    <div className="text-right">
-                       <p className="text-sm font-bold text-success">{formatCurrency(l.valorLiquido)}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Lançamento</p>
+                      <p className="text-xs font-semibold text-card-foreground">{formatDate(l.data)}</p>
+                      <p className="text-sm font-bold text-success mt-1">{formatCurrency(l.valorLiquido)}</p>
                     </div>
                   </div>
                 ))}
@@ -248,9 +246,9 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
                       {idx + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Mês de Referência</p>
-                      <p className="text-sm font-black text-card-foreground uppercase tracking-tight">{m.mes}</p>
-                      <p className="text-lg font-bold text-success mt-1">{formatCurrency(m.Vendas)}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Mês de Referência</p>
+                      <p className="text-[13px] font-medium text-card-foreground uppercase tracking-tight">{m.mes}</p>
+                      <p className="text-base font-bold text-success mt-1">{formatCurrency(m.Vendas)}</p>
                     </div>
                   </div>
                 ))}
