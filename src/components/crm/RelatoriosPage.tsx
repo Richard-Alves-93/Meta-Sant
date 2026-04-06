@@ -222,15 +222,17 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
             ) : (
               <div className="space-y-3">
                 {topLancamentos.map((l, idx) => (
-                  <div key={l.id} className="flex items-center gap-3 bg-secondary/60 rounded-lg p-3 hover:bg-secondary transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold shadow-sm">
+                  <div key={l.id} className="flex items-center gap-4 bg-secondary/40 rounded-xl p-4 hover:bg-secondary/60 transition-all border border-transparent hover:border-border/50 group">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-base font-bold shadow-sm shrink-0 group-hover:scale-110 transition-transform">
                       {idx + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-card-foreground truncate">{formatDate(l.data)}</p>
-                      <p className="text-xs text-muted-foreground truncate">Lançamento Padrão</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Lançamento</p>
+                      <p className="text-sm font-semibold text-card-foreground">{formatDate(l.data)}</p>
                     </div>
-                    <span className="font-semibold text-success text-sm whitespace-nowrap">{formatCurrency(l.valorLiquido)}</span>
+                    <div className="text-right">
+                       <p className="text-sm font-bold text-success">{formatCurrency(l.valorLiquido)}</p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -241,15 +243,15 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
             ) : (
               <div className="space-y-3">
                 {topMesesAnual.map((m, idx) => (
-                  <div key={m.mes} className="flex items-center gap-3 bg-secondary/60 rounded-lg p-3 hover:bg-secondary transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold shadow-sm">
+                  <div key={m.mes} className="flex items-center gap-4 bg-secondary/40 rounded-xl p-4 hover:bg-secondary/60 transition-all border border-transparent hover:border-border/50 group">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-base font-bold shadow-sm shrink-0 group-hover:scale-110 transition-transform">
                       {idx + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-card-foreground truncate">{m.mes} / {filterYear}</p>
-                      <p className="text-xs text-muted-foreground truncate">Faturamento Total</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Mês de Referência</p>
+                      <p className="text-sm font-black text-card-foreground uppercase tracking-tight">{m.mes}</p>
+                      <p className="text-lg font-bold text-success mt-1">{formatCurrency(m.Vendas)}</p>
                     </div>
-                    <span className="font-semibold text-success text-sm whitespace-nowrap">{formatCurrency(m.Vendas)}</span>
                   </div>
                 ))}
               </div>
