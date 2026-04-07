@@ -23,8 +23,16 @@ function PetFormComponent({ pet, index, onPetChange, onRemove, showRemove }: Pet
   const [racasList, setRacasList] = useState<string[]>([]);
 
   useEffect(() => {
-    const racasSalvas = JSON.parse(localStorage.getItem("racas") || "[]");
-    setRacasList(Array.isArray(racasSalvas) ? racasSalvas : []);
+    try {
+      const item = localStorage.getItem("racas");
+      if (item) {
+        const racasSalvas = JSON.parse(item);
+        setRacasList(Array.isArray(racasSalvas) ? racasSalvas : []);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar raças do localStorage:", error);
+      setRacasList([]);
+    }
   }, []);
 
   const handleRacaBlur = (valor: string) => {

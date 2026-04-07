@@ -17,8 +17,10 @@ interface Step2PetsProps {
  */
 
 export function Step2Pets({ pets, onPetChange, onAddPet, onRemovePet }: Step2PetsProps) {
+  if (!pets || pets.length === 0) return null;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-2">
       <div className="flex items-center gap-3 mb-6">
         <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
           <PawPrint className="w-6 h-6 text-amber-600 dark:text-amber-400" />
