@@ -13,7 +13,7 @@ interface CrmSidebarProps {
 }
 
 const navItems: { page: CrmPage; label: string; icon: React.ReactNode }[] = [
-  { page: "dashboard", label: "Dashboard", icon: <BarChart3 size={20} /> },
+  { page: "dashboard", label: "Painel", icon: <BarChart3 size={20} /> },
   { page: "lancamentos", label: "Lançamentos", icon: <FileText size={20} /> },
   { page: "metas", label: "Metas", icon: <Target size={20} /> },
   { page: "cadastros", label: "Cadastros", icon: <Users size={20} /> },

@@ -54,7 +54,7 @@ const LancamentosPage = ({ db, onAdd, onEdit, onDelete, onOpenModal }: Lancament
         <p className="text-muted-foreground text-sm">Registre o faturamento diário. Um lançamento por dia atualiza todas as metas.</p>
         <div className="flex gap-3 mt-4 flex-wrap">
           <button onClick={onOpenModal} className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
-            + Lançar venda do dia
+            + Lançar faturamento do dia
           </button>
         </div>
       </div>
@@ -66,7 +66,7 @@ const LancamentosPage = ({ db, onAdd, onEdit, onDelete, onOpenModal }: Lancament
       </div>
 
       <div className="bg-card border border-border rounded-xl p-6 shadow-sm mb-6">
-        <h3 className="font-semibold text-card-foreground mb-4">Lançar venda do dia</h3>
+        <h3 className="font-semibold text-card-foreground mb-4">Lançar faturamento do dia</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-card-foreground">Data</label>

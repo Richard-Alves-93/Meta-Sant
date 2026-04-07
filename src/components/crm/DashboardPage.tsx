@@ -122,11 +122,11 @@ const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta, onNavig
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-1">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-1">Painel</h1>
         <p className="text-muted-foreground text-sm">Acompanhe o desempenho de vendas em tempo real</p>
         <div className="flex gap-3 mt-4 flex-wrap">
           <button onClick={onOpenLancamento} className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
-            + Lançar venda do dia
+            + Lançar faturamento do dia
           </button>
           {db.metas.length > 0 && (
             <button

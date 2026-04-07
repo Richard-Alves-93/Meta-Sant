@@ -43,7 +43,7 @@ const LancamentoModal = ({ open, onClose, onSave, editingLancamento }: Lancament
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{editingLancamento ? "Editar Lançamento" : "Lançar Venda do Dia"}</DialogTitle>
+          <DialogTitle>{editingLancamento ? "Editar Lançamento" : "Lançar Faturamento do Dia"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
