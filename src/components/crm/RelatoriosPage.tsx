@@ -169,10 +169,25 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {db.metas.map(meta => {
-               // Extrapola a meta x12 no ano a menos que ela seja uma meta descritiva já "anual"
-               const isAnual = meta.anual || meta.nome.toLowerCase().includes('ano') || meta.nome.toLowerCase().includes('anual');
-               const targetValor = viewMode === 'year' && !isAnual ? meta.valor * 12 : 
-                                   viewMode === 'month' && isAnual ? meta.valor / 12 : meta.valor;
+               let targetValor = meta.valor;
+
+               if (viewMode === 'month') {
+                 // Usa snapshot histórico do mês selecionado, se existir
+                 const [yStr, mStr] = filterMonth.split("-");
+                 const y = parseInt(yStr);
+                 const mNum = parseInt(mStr);
+                 const snap = metasHistory.find(h => h.ano === y && h.mes === mNum && h.nome === meta.nome);
+                 if (snap) targetValor = snap.valor;
+               } else {
+                 // Visão anual: soma das metas mensais do ano (snapshot por mês; meses sem snapshot usam meta atual)
+                 const ano = parseInt(filterYear);
+                 let total = 0;
+                 for (let m = 1; m <= 12; m++) {
+                   const snap = metasHistory.find(h => h.ano === ano && h.mes === m && h.nome === meta.nome);
+                   total += snap ? snap.valor : meta.valor;
+                 }
+                 targetValor = total;
+               }
 
                const pct = targetValor > 0 ? Math.min((totalLiquido / targetValor) * 100, 100) : 0;
                const attained = totalLiquido >= targetValor;
