@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { CrmDatabase, formatCurrency, formatDate, getDiasMes } from "@/lib/crm-data";
 import { parseLocalDate } from "@/utils/date";
 import KpiCard from "./KpiCard";
 import { DollarSign, TrendingDown, Activity, TrendingUp, Calendar, Target } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Legend, Area, AreaChart } from "recharts";
+import { fetchMetasMensais, ensureCurrentMonthSnapshot, type MetaMensal } from "@/services/metaHistoryService";
 
 interface RelatoriosPageProps {
   db: CrmDatabase;
