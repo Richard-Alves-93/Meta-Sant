@@ -20,6 +20,19 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
   const [filterYear, setFilterYear] = useState(() => new Date().getFullYear().toString());
+  const [metasHistory, setMetasHistory] = useState<MetaMensal[]>([]);
+
+  // Persiste snapshot do mês atual e carrega histórico
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await ensureCurrentMonthSnapshot(db.metas);
+      const history = await fetchMetasMensais();
+      if (!cancelled) setMetasHistory(history);
+    })();
+    return () => { cancelled = true; };
+  }, [db.metas]);
+
 
   const lancamentos = useMemo(() => {
     return db.lancamentos.filter(l => {
