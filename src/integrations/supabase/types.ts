@@ -104,6 +104,42 @@ export type Database = {
         }
         Relationships: []
       }
+      metas_mensais: {
+        Row: {
+          ano: number
+          created_at: string
+          id: string
+          mes: number
+          meta_id: string | null
+          nome: string
+          updated_at: string
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          id?: string
+          mes: number
+          meta_id?: string | null
+          nome: string
+          updated_at?: string
+          user_id: string
+          valor: number
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          id?: string
+          mes?: number
+          meta_id?: string | null
+          nome?: string
+          updated_at?: string
+          user_id?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
