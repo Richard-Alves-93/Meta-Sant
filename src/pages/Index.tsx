@@ -104,7 +104,7 @@ const Index = () => {
                     registration.showNotification("🎯 Novo Mês! Atualize suas Metas", {
                       body: "Chegou o dia 1. Abra o sistema para manter ou atualizar as suas metas financeiras deste novo mês.",
                       icon: "/icon-192x192.png",
-                      vibrate: [200, 100, 200]
+                      ...({ vibrate: [200, 100, 200] } as any),
                     });
                   });
                 } else {

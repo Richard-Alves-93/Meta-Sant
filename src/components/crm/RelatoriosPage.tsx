@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { CrmDatabase, formatCurrency, formatDate, getDiasMes } from "@/lib/crm-data";
 import { parseLocalDate } from "@/utils/date";
 import KpiCard from "./KpiCard";
 import { DollarSign, TrendingDown, Activity, TrendingUp, Calendar, Target } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Legend, Area, AreaChart } from "recharts";
+import { fetchMetasMensais, ensureCurrentMonthSnapshot, type MetaMensal } from "@/services/metaHistoryService";
 
 interface RelatoriosPageProps {
   db: CrmDatabase;
@@ -19,6 +20,19 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
   const [filterYear, setFilterYear] = useState(() => new Date().getFullYear().toString());
+  const [metasHistory, setMetasHistory] = useState<MetaMensal[]>([]);
+
+  // Persiste snapshot do mês atual e carrega histórico
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await ensureCurrentMonthSnapshot(db.metas);
+      const history = await fetchMetasMensais();
+      if (!cancelled) setMetasHistory(history);
+    })();
+    return () => { cancelled = true; };
+  }, [db.metas]);
+
 
   const lancamentos = useMemo(() => {
     return db.lancamentos.filter(l => {
@@ -59,15 +73,25 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
   const vendasPorMes = useMemo(() => {
     if (viewMode !== 'year') return [];
     const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-    const metaPrincipal = db.metas[0]?.valor || 0;
+    const ano = parseInt(filterYear);
+    const metaPrincipalNome = db.metas[0]?.nome;
+    const metaPrincipalAtual = db.metas[0]?.valor || 0;
 
     return meses.map((nome, i) => {
+      const mesNum = i + 1;
       const valor = lancamentos
         .filter(l => parseLocalDate(l.data).getMonth() === i)
         .reduce((s, l) => s + l.valorLiquido, 0);
-      return { mes: nome, Vendas: valor, Meta: metaPrincipal };
+
+      // Meta histórica daquele mês: pega snapshot do mês; se não houver, usa meta atual
+      const snap = metasHistory.find(h => h.ano === ano && h.mes === mesNum && (!metaPrincipalNome || h.nome === metaPrincipalNome))
+        || metasHistory.find(h => h.ano === ano && h.mes === mesNum);
+      const metaMes = snap ? snap.valor : metaPrincipalAtual;
+
+      return { mes: nome, Vendas: valor, Meta: metaMes };
     });
-  }, [lancamentos, viewMode, db.metas]);
+  }, [lancamentos, viewMode, db.metas, filterYear, metasHistory]);
+
 
   const topLancamentos = useMemo(() =>
     [...lancamentos].sort((a, b) => b.valorLiquido - a.valorLiquido).slice(0, 5),
@@ -145,10 +169,25 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {db.metas.map(meta => {
-               // Extrapola a meta x12 no ano a menos que ela seja uma meta descritiva já "anual"
-               const isAnual = meta.anual || meta.nome.toLowerCase().includes('ano') || meta.nome.toLowerCase().includes('anual');
-               const targetValor = viewMode === 'year' && !isAnual ? meta.valor * 12 : 
-                                   viewMode === 'month' && isAnual ? meta.valor / 12 : meta.valor;
+               let targetValor = meta.valor;
+
+               if (viewMode === 'month') {
+                 // Usa snapshot histórico do mês selecionado, se existir
+                 const [yStr, mStr] = filterMonth.split("-");
+                 const y = parseInt(yStr);
+                 const mNum = parseInt(mStr);
+                 const snap = metasHistory.find(h => h.ano === y && h.mes === mNum && h.nome === meta.nome);
+                 if (snap) targetValor = snap.valor;
+               } else {
+                 // Visão anual: soma das metas mensais do ano (snapshot por mês; meses sem snapshot usam meta atual)
+                 const ano = parseInt(filterYear);
+                 let total = 0;
+                 for (let m = 1; m <= 12; m++) {
+                   const snap = metasHistory.find(h => h.ano === ano && h.mes === m && h.nome === meta.nome);
+                   total += snap ? snap.valor : meta.valor;
+                 }
+                 targetValor = total;
+               }
 
                const pct = targetValor > 0 ? Math.min((totalLiquido / targetValor) * 100, 100) : 0;
                const attained = totalLiquido >= targetValor;
