@@ -73,15 +73,25 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
   const vendasPorMes = useMemo(() => {
     if (viewMode !== 'year') return [];
     const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-    const metaPrincipal = db.metas[0]?.valor || 0;
+    const ano = parseInt(filterYear);
+    const metaPrincipalNome = db.metas[0]?.nome;
+    const metaPrincipalAtual = db.metas[0]?.valor || 0;
 
     return meses.map((nome, i) => {
+      const mesNum = i + 1;
       const valor = lancamentos
         .filter(l => parseLocalDate(l.data).getMonth() === i)
         .reduce((s, l) => s + l.valorLiquido, 0);
-      return { mes: nome, Vendas: valor, Meta: metaPrincipal };
+
+      // Meta histórica daquele mês: pega snapshot do mês; se não houver, usa meta atual
+      const snap = metasHistory.find(h => h.ano === ano && h.mes === mesNum && (!metaPrincipalNome || h.nome === metaPrincipalNome))
+        || metasHistory.find(h => h.ano === ano && h.mes === mesNum);
+      const metaMes = snap ? snap.valor : metaPrincipalAtual;
+
+      return { mes: nome, Vendas: valor, Meta: metaMes };
     });
-  }, [lancamentos, viewMode, db.metas]);
+  }, [lancamentos, viewMode, db.metas, filterYear, metasHistory]);
+
 
   const topLancamentos = useMemo(() =>
     [...lancamentos].sort((a, b) => b.valorLiquido - a.valorLiquido).slice(0, 5),
