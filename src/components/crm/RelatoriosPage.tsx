@@ -220,7 +220,7 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-card border border-border rounded-xl p-6 shadow-sm">
           <h3 className="font-semibold text-card-foreground mb-4">
-            {viewMode === 'month' ? 'Evolução Diária de Vendas' : 'Evolução Mensal vs Meta Principal'}
+            {viewMode === 'month' ? 'Evolução Diária de Vendas' : 'Evolução Mensal vs Metas'}
           </h3>
           <div className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
