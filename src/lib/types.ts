@@ -14,6 +14,7 @@ export interface Meta {
 export interface Lancamento {
   id: string;
   data: string;
+  createdAt?: string;
   valorBruto: number;
   desconto: number;
   valorLiquido: number;

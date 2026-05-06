@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { CrmDatabase, getLancamentosDoMes, getLancamentosMesAnterior, formatCurrency, getDiasMes, calcularVendasNecessarias, Lancamento, formatDate, getRemainingWorkingDays } from "@/lib/crm-data";
+import { CrmDatabase, getLancamentosDoMes, getLancamentosMesAnterior, formatCurrency, getDiasMes, calcularVendasNecessarias, Lancamento, formatDate, formatDateTime, getRemainingWorkingDays } from "@/lib/crm-data";
 import { parseLocalDate } from "@/utils/date";
 import KpiCard from "./KpiCard";
 import MetaCard from "./MetaCard";
@@ -235,7 +235,7 @@ const DashboardPage = ({ db, onOpenLancamento, onEditMeta, onDeleteMeta, onNavig
                   <tr><td colSpan={4} className="text-center py-8 text-muted-foreground text-sm">Nenhum lançamento registrado</td></tr>
                 ) : ultimosLancamentos.map(l => (
                   <tr key={l.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
-                    <td className="py-3 px-4 text-sm">{formatDate(l.data)}</td>
+                    <td className="py-3 px-4 text-sm">{formatDateTime(l.data, l.createdAt)}</td>
                     <td className="py-3 px-4 text-sm">{formatCurrency(l.valorBruto)}</td>
                     <td className="py-3 px-4 text-sm text-warning">{formatCurrency(l.desconto)}</td>
                     <td className="py-3 px-4 text-sm font-semibold text-success">{formatCurrency(l.valorLiquido)}</td>

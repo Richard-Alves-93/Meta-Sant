@@ -39,7 +39,7 @@ export type {
 } from '@/lib/types';
 
 // ==================== Formatter Exports ====================
-export { formatCurrency, formatDate } from '@/lib/formatters';
+export { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
 
 // ==================== Auth Service Exports ====================
 export { getAuthUser, getAuthUserId } from '@/services/authService';

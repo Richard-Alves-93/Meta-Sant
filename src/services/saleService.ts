@@ -29,6 +29,7 @@ export async function fetchDatabase(): Promise<CrmDatabase> {
   const lancamentos: Lancamento[] = (lancRes.data || []).map(l => ({
     id: l.id,
     data: l.data,
+    createdAt: l.created_at,
     valorBruto: Number(l.valor_bruto),
     desconto: Number(l.desconto),
     valorLiquido: Number(l.valor_liquido),

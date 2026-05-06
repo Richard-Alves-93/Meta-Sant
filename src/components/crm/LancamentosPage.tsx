@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { CrmDatabase, formatCurrency, formatDate, Lancamento } from "@/lib/crm-data";
+import { CrmDatabase, formatCurrency, formatDateTime, Lancamento } from "@/lib/crm-data";
 import { parseLocalDate, formatISODate } from "@/utils/date";
 import { useCurrencyInput } from "@/hooks/useCurrencyInput";
 import KpiCard from "./KpiCard";
@@ -136,7 +136,7 @@ const LancamentosPage = ({ db, onAdd, onEdit, onDelete, onOpenModal }: Lancament
                   <tr><td colSpan={5} className="text-center py-8 text-muted-foreground text-sm">Nenhum lançamento registrado</td></tr>
                 ) : filtered.map(l => (
                   <tr key={l.id} className="border-b border-border/50 hover:bg-secondary/50 transition-colors">
-                    <td className="py-3 px-4 text-sm">{formatDate(l.data)}</td>
+                    <td className="py-3 px-4 text-sm">{formatDateTime(l.data, l.createdAt)}</td>
                     <td className="py-3 px-4 text-sm">{formatCurrency(l.valorBruto)}</td>
                     <td className="py-3 px-4 text-sm text-warning">{formatCurrency(l.desconto)}</td>
                     <td className="py-3 px-4 text-sm font-semibold text-success">{formatCurrency(l.valorLiquido)}</td>
