@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { CrmDatabase, formatCurrency, formatDate, Lancamento } from "@/lib/crm-data";
+import { CrmDatabase, formatCurrency, formatDateTime, Lancamento } from "@/lib/crm-data";
 import { parseLocalDate, formatISODate } from "@/utils/date";
 import { useCurrencyInput } from "@/hooks/useCurrencyInput";
 import KpiCard from "./KpiCard";
