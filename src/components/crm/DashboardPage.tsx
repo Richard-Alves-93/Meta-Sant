@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { CrmDatabase, getLancamentosDoMes, getLancamentosMesAnterior, formatCurrency, getDiasMes, calcularVendasNecessarias, Lancamento, formatDate, getRemainingWorkingDays } from "@/lib/crm-data";
+import { CrmDatabase, getLancamentosDoMes, getLancamentosMesAnterior, formatCurrency, getDiasMes, calcularVendasNecessarias, Lancamento, formatDate, formatDateTime, getRemainingWorkingDays } from "@/lib/crm-data";
 import { parseLocalDate } from "@/utils/date";
 import KpiCard from "./KpiCard";
 import MetaCard from "./MetaCard";
