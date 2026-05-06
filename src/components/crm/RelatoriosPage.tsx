@@ -74,8 +74,6 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
     if (viewMode !== 'year') return [];
     const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     const ano = parseInt(filterYear);
-    const metaPrincipalNome = db.metas[0]?.nome;
-    const metaPrincipalAtual = db.metas[0]?.valor || 0;
 
     return meses.map((nome, i) => {
       const mesNum = i + 1;
@@ -83,14 +81,18 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
         .filter(l => parseLocalDate(l.data).getMonth() === i)
         .reduce((s, l) => s + l.valorLiquido, 0);
 
-      // Meta histórica daquele mês: pega snapshot do mês; se não houver, usa meta atual
-      const snap = metasHistory.find(h => h.ano === ano && h.mes === mesNum && (!metaPrincipalNome || h.nome === metaPrincipalNome))
-        || metasHistory.find(h => h.ano === ano && h.mes === mesNum);
-      const metaMes = snap ? snap.valor : metaPrincipalAtual;
-
-      return { mes: nome, Vendas: valor, Meta: metaMes };
+      const row: Record<string, any> = { mes: nome, Vendas: valor };
+      // Para cada meta cadastrada, adiciona uma série com o valor histórico daquele mês
+      db.metas.forEach(meta => {
+        const snap = metasHistory.find(h => h.ano === ano && h.mes === mesNum && h.nome === meta.nome);
+        row[meta.nome] = snap ? snap.valor : meta.valor;
+      });
+      return row;
     });
   }, [lancamentos, viewMode, db.metas, filterYear, metasHistory]);
+
+  // Paleta de cores para distinguir as metas no gráfico
+  const metaColors = ['hsl(var(--success))', 'hsl(var(--primary))', 'hsl(var(--destructive))', '#f59e0b', '#8b5cf6', '#06b6d4'];
 
 
   const topLancamentos = useMemo(() =>
