@@ -246,7 +246,17 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
                   <Tooltip formatter={(v: number) => formatCurrency(v)} />
                   <Legend />
                   <Bar dataKey="Vendas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} maxBarSize={50} />
-                  {db.metas.length > 0 && <Line type="stepAfter" dataKey="Meta" stroke="hsl(var(--success))" strokeWidth={2} strokeDasharray="5 5" dot={false} />}
+                  {db.metas.map((meta, idx) => (
+                    <Line
+                      key={meta.id}
+                      type="stepAfter"
+                      dataKey={meta.nome}
+                      stroke={metaColors[idx % metaColors.length]}
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      dot={false}
+                    />
+                  ))}
                 </ComposedChart>
               )}
             </ResponsiveContainer>
