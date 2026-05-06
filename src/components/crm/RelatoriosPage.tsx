@@ -70,10 +70,24 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
     });
   }, [lancamentos, viewMode, filterMonth]);
 
+  // Nomes únicos de metas que existiram no ano (preserva histórico mesmo se a meta foi renomeada/excluída)
+  const metaNamesAno = useMemo(() => {
+    if (viewMode !== 'year') return [] as string[];
+    const ano = parseInt(filterYear);
+    const names = new Set<string>();
+    metasHistory.filter(h => h.ano === ano).forEach(h => names.add(h.nome));
+    // Inclui metas atuais (caso ainda não tenham snapshot no ano)
+    db.metas.forEach(m => names.add(m.nome));
+    return Array.from(names);
+  }, [metasHistory, db.metas, filterYear, viewMode]);
+
   const vendasPorMes = useMemo(() => {
     if (viewMode !== 'year') return [];
     const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     const ano = parseInt(filterYear);
+    const now = new Date();
+    const anoAtual = now.getFullYear();
+    const mesAtual = now.getMonth() + 1;
 
     return meses.map((nome, i) => {
       const mesNum = i + 1;
@@ -82,14 +96,23 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
         .reduce((s, l) => s + l.valorLiquido, 0);
 
       const row: Record<string, any> = { mes: nome, Vendas: valor };
-      // Para cada meta cadastrada, adiciona uma série com o valor histórico daquele mês
-      db.metas.forEach(meta => {
-        const snap = metasHistory.find(h => h.ano === ano && h.mes === mesNum && h.nome === meta.nome);
-        row[meta.nome] = snap ? snap.valor : meta.valor;
+      // Para cada meta que existiu no ano, busca seu valor histórico naquele mês.
+      // Se não houver snapshot e for o mês corrente, usa o valor atual cadastrado.
+      // Caso contrário, deixa null (não houve meta naquele mês).
+      metaNamesAno.forEach(metaNome => {
+        const snap = metasHistory.find(h => h.ano === ano && h.mes === mesNum && h.nome === metaNome);
+        if (snap) {
+          row[metaNome] = snap.valor;
+        } else if (ano === anoAtual && mesNum === mesAtual) {
+          const atual = db.metas.find(m => m.nome === metaNome);
+          row[metaNome] = atual ? atual.valor : null;
+        } else {
+          row[metaNome] = null;
+        }
       });
       return row;
     });
-  }, [lancamentos, viewMode, db.metas, filterYear, metasHistory]);
+  }, [lancamentos, viewMode, db.metas, filterYear, metasHistory, metaNamesAno]);
 
   // Paleta de cores para distinguir as metas no gráfico
   const metaColors = ['hsl(var(--success))', 'hsl(var(--primary))', 'hsl(var(--destructive))', '#f59e0b', '#8b5cf6', '#06b6d4'];
@@ -246,15 +269,16 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
                   <Tooltip formatter={(v: number) => formatCurrency(v)} />
                   <Legend />
                   <Bar dataKey="Vendas" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} maxBarSize={50} />
-                  {db.metas.map((meta, idx) => (
+                  {metaNamesAno.map((nome, idx) => (
                     <Line
-                      key={meta.id}
+                      key={nome}
                       type="stepAfter"
-                      dataKey={meta.nome}
+                      dataKey={nome}
                       stroke={metaColors[idx % metaColors.length]}
                       strokeWidth={2}
                       strokeDasharray="5 5"
                       dot={false}
+                      connectNulls={false}
                     />
                   ))}
                 </ComposedChart>
