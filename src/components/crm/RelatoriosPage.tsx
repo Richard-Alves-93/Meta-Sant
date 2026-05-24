@@ -11,7 +11,34 @@ interface RelatoriosPageProps {
   onExportExcel: () => void;
 }
 
-type ViewMode = 'month' | 'year';
+type ViewMode = 'week' | 'month' | 'year';
+
+// ---------- Helpers de semana ISO ----------
+function getISOWeekString(d: Date): string {
+  // Retorna "YYYY-Www" no padrão ISO 8601
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+}
+
+function getWeekRange(weekStr: string): { start: Date; end: Date } {
+  // weekStr: "YYYY-Www" → retorna segunda e domingo (local)
+  const [yStr, wStr] = weekStr.split('-W');
+  const year = parseInt(yStr);
+  const week = parseInt(wStr);
+  // ISO: 4 de Janeiro está sempre na semana 1
+  const jan4 = new Date(year, 0, 4);
+  const jan4Day = jan4.getDay() || 7;
+  const week1Monday = new Date(year, 0, 4 - (jan4Day - 1));
+  const start = new Date(week1Monday);
+  start.setDate(week1Monday.getDate() + (week - 1) * 7);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return { start, end };
+}
 
 const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
@@ -20,6 +47,7 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
   const [filterYear, setFilterYear] = useState(() => new Date().getFullYear().toString());
+  const [filterWeek, setFilterWeek] = useState(() => getISOWeekString(new Date()));
   const [metasHistory, setMetasHistory] = useState<MetaMensal[]>([]);
 
   // Persiste snapshot do mês atual e carrega histórico
@@ -33,6 +61,7 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
     return () => { cancelled = true; };
   }, [db.metas]);
 
+  const weekRange = useMemo(() => getWeekRange(filterWeek), [filterWeek]);
 
   const lancamentos = useMemo(() => {
     return db.lancamentos.filter(l => {
@@ -40,19 +69,24 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
       if (viewMode === 'month') {
         const [y, m] = filterMonth.split("-");
         return d.getFullYear() === parseInt(y) && d.getMonth() + 1 === parseInt(m);
-      } else {
+      } else if (viewMode === 'year') {
         return d.getFullYear() === parseInt(filterYear);
+      } else {
+        // week
+        const t = d.getTime();
+        const startT = new Date(weekRange.start.getFullYear(), weekRange.start.getMonth(), weekRange.start.getDate()).getTime();
+        const endT = new Date(weekRange.end.getFullYear(), weekRange.end.getMonth(), weekRange.end.getDate(), 23, 59, 59).getTime();
+        return t >= startT && t <= endT;
       }
     });
-  }, [db.lancamentos, viewMode, filterMonth, filterYear]);
+  }, [db.lancamentos, viewMode, filterMonth, filterYear, weekRange]);
 
   const totalLiquido = lancamentos.reduce((s, l) => s + l.valorLiquido, 0);
   const totalDesconto = lancamentos.reduce((s, l) => s + l.desconto, 0);
   
   // Projeção baseada na média diária (só para o mês atual)
   const mediaDiaria = lancamentos.length > 0 ? totalLiquido / lancamentos.length : 0;
-  // Se for visão anual, podemos projetar vezes 12 caso queiramos.
-  const numDias = viewMode === 'month' ? getDiasMes() : 365;
+  const numDias = viewMode === 'month' ? getDiasMes() : viewMode === 'week' ? 7 : 365;
   const projecao = mediaDiaria * numDias;
 
   const vendasPorDia = useMemo(() => {
@@ -69,6 +103,23 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
       return { dia, valor };
     });
   }, [lancamentos, viewMode, filterMonth]);
+
+  // Vendas por dia da semana selecionada (Seg → Dom)
+  const vendasPorDiaSemana = useMemo(() => {
+    if (viewMode !== 'week') return [];
+    const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(weekRange.start);
+      d.setDate(weekRange.start.getDate() + i);
+      const valor = lancamentos
+        .filter(l => {
+          const ld = parseLocalDate(l.data);
+          return ld.getFullYear() === d.getFullYear() && ld.getMonth() === d.getMonth() && ld.getDate() === d.getDate();
+        })
+        .reduce((s, l) => s + l.valorLiquido, 0);
+      return { dia: `${labels[i]} ${String(d.getDate()).padStart(2, '0')}`, valor };
+    });
+  }, [lancamentos, viewMode, weekRange]);
 
   // Nomes únicos de metas que existiram no ano (preserva histórico mesmo se a meta foi renomeada/excluída)
   const metaNamesAno = useMemo(() => {
@@ -96,9 +147,6 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
         .reduce((s, l) => s + l.valorLiquido, 0);
 
       const row: Record<string, any> = { mes: nome, Vendas: valor };
-      // Para cada meta que existiu no ano, busca seu valor histórico naquele mês.
-      // Se não houver snapshot e for o mês corrente, usa o valor atual cadastrado.
-      // Caso contrário, deixa null (não houve meta naquele mês).
       metaNamesAno.forEach(metaNome => {
         const snap = metasHistory.find(h => h.ano === ano && h.mes === mesNum && h.nome === metaNome);
         if (snap) {
@@ -131,6 +179,15 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
       .slice(0, 5);
   }, [vendasPorMes, viewMode]);
 
+  const periodoLabel = viewMode === 'month' ? 'mês' : viewMode === 'week' ? 'semana' : 'ano';
+  const metaTitulo = viewMode === 'month' ? 'Mensal' : viewMode === 'week' ? 'Semanal' : 'Anual';
+
+  // Formata intervalo da semana para exibição
+  const weekRangeLabel = useMemo(() => {
+    const fmt = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return `${fmt(weekRange.start)} – ${fmt(weekRange.end)}`;
+  }, [weekRange]);
+
   return (
     <div>
       <div className="mb-8">
@@ -139,6 +196,12 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
         
         <div className="mt-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-card border border-border p-4 rounded-xl shadow-sm">
           <div className="flex bg-secondary p-1 rounded-lg">
+            <button 
+              onClick={() => setViewMode('week')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${viewMode === 'week' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Visão Semanal
+            </button>
             <button 
               onClick={() => setViewMode('month')}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${viewMode === 'month' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
@@ -153,8 +216,15 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
             </button>
           </div>
 
-          <div className="flex gap-3">
-            {viewMode === 'month' ? (
+          <div className="flex gap-3 items-center flex-wrap">
+            {viewMode === 'week' ? (
+              <div className="flex items-center gap-2">
+                <Calendar size={18} className="text-muted-foreground" />
+                <input type="week" value={filterWeek} onChange={(e) => setFilterWeek(e.target.value)}
+                  className="px-3 py-2 border border-input rounded-lg text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                <span className="text-xs text-muted-foreground whitespace-nowrap">{weekRangeLabel}</span>
+              </div>
+            ) : viewMode === 'month' ? (
               <div className="flex items-center gap-2">
                 <Calendar size={18} className="text-muted-foreground" />
                 <input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)}
@@ -181,7 +251,7 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <KpiCard label="Total Faturado" value={formatCurrency(totalLiquido)} icon={<DollarSign size={18} />} />
         <KpiCard label="Descontos Concedidos" value={formatCurrency(totalDesconto)} icon={<TrendingDown size={18} />} />
-        <KpiCard label={viewMode === 'month' ? "Média Diária" : "Média de Faturamento"} value={formatCurrency(viewMode === 'month' ? mediaDiaria : mediaDiaria * 30)} icon={<Activity size={18} />} />
+        <KpiCard label={viewMode === 'year' ? "Média de Faturamento" : "Média Diária"} value={formatCurrency(viewMode === 'year' ? mediaDiaria * 30 : mediaDiaria)} icon={<Activity size={18} />} />
         <KpiCard label="Projeção do Período" value={formatCurrency(projecao)} icon={<TrendingUp size={18} />} />
       </div>
 
@@ -189,7 +259,7 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm mb-8">
           <div className="flex items-center gap-2 mb-6">
             <Target size={20} className="text-primary" />
-            <h3 className="font-semibold text-card-foreground">Desempenho de Metas ({viewMode === 'month' ? 'Mensal' : 'Anual'})</h3>
+            <h3 className="font-semibold text-card-foreground">Desempenho de Metas ({metaTitulo})</h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -197,14 +267,12 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
                let targetValor = meta.valor;
 
                if (viewMode === 'month') {
-                 // Usa snapshot histórico do mês selecionado, se existir
                  const [yStr, mStr] = filterMonth.split("-");
                  const y = parseInt(yStr);
                  const mNum = parseInt(mStr);
                  const snap = metasHistory.find(h => h.ano === y && h.mes === mNum && h.nome === meta.nome);
                  if (snap) targetValor = snap.valor;
-               } else {
-                 // Visão anual: soma das metas mensais do ano (snapshot por mês; meses sem snapshot usam meta atual)
+               } else if (viewMode === 'year') {
                  const ano = parseInt(filterYear);
                  let total = 0;
                  for (let m = 1; m <= 12; m++) {
@@ -212,6 +280,15 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
                    total += snap ? snap.valor : meta.valor;
                  }
                  targetValor = total;
+               } else {
+                 // semana: prorrata a meta mensal proporcionalmente aos 7 dias
+                 const refDate = weekRange.start;
+                 const y = refDate.getFullYear();
+                 const mNum = refDate.getMonth() + 1;
+                 const snap = metasHistory.find(h => h.ano === y && h.mes === mNum && h.nome === meta.nome);
+                 const metaMensal = snap ? snap.valor : meta.valor;
+                 const diasNoMes = new Date(y, mNum, 0).getDate();
+                 targetValor = (metaMensal / diasNoMes) * 7;
                }
 
                const pct = targetValor > 0 ? Math.min((totalLiquido / targetValor) * 100, 100) : 0;
@@ -227,7 +304,7 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
                          <span className="text-muted-foreground"> / {formatCurrency(targetValor)}</span>
                        </span>
                      </div>
-                     <p className="text-xs text-muted-foreground text-right">{pct.toFixed(1)}% concluído do {viewMode === 'month' ? 'mês' : 'ano'}</p>
+                     <p className="text-xs text-muted-foreground text-right">{pct.toFixed(1)}% concluído da {periodoLabel === 'mês' ? 'do mês' : periodoLabel === 'semana' ? 'semana' : 'do ano'}</p>
                    </div>
                    
                    <div className="h-3 w-full bg-secondary rounded-full overflow-hidden shadow-inner">
@@ -243,7 +320,7 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-card border border-border rounded-xl p-6 shadow-sm">
           <h3 className="font-semibold text-card-foreground mb-4">
-            {viewMode === 'month' ? 'Evolução Diária de Vendas' : 'Evolução Mensal vs Metas'}
+            {viewMode === 'month' ? 'Evolução Diária de Vendas' : viewMode === 'week' ? 'Vendas da Semana' : 'Evolução Mensal vs Metas'}
           </h3>
           <div className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -261,6 +338,14 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
                   <Tooltip formatter={(v: number) => formatCurrency(v)} labelFormatter={(l) => `Dia ${l}`} />
                   <Area type="monotone" dataKey="valor" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorValor)" strokeWidth={2} />
                 </AreaChart>
+              ) : viewMode === 'week' ? (
+                <BarChart data={vendasPorDiaSemana}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="dia" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `R$${v/1000}k`} />
+                  <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                  <Bar dataKey="valor" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                </BarChart>
               ) : (
                 <ComposedChart data={vendasPorMes}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
@@ -289,9 +374,9 @@ const RelatoriosPage = ({ db, onExportExcel }: RelatoriosPageProps) => {
 
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col">
           <h3 className="font-semibold text-card-foreground mb-4">
-            {viewMode === 'month' ? 'Top Vendas do Mês' : 'Melhores Meses'}
+            {viewMode === 'year' ? 'Melhores Meses' : viewMode === 'week' ? 'Top Vendas da Semana' : 'Top Vendas do Mês'}
           </h3>
-          {viewMode === 'month' ? (
+          {viewMode !== 'year' ? (
             topLancamentos.length === 0 ? (
               <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Nenhum dado no período</div>
             ) : (
