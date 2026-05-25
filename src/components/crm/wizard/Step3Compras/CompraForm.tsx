@@ -170,8 +170,11 @@ function CompraFormComponent({
 
           <div>
             <Label htmlFor={`purchase-${index}-valor`} className="text-xs font-medium">
-              Valor (R$)
+              Valor pago
             </Label>
+            <p className="text-[10px] text-muted-foreground mb-1 leading-tight">
+              Qual valor que o cliente pagou?
+            </p>
             <Input
               id={`purchase-${index}-valor`}
               type="text"

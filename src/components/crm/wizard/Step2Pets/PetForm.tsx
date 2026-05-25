@@ -80,7 +80,7 @@ function PetFormComponent({ pet, index, onPetChange, onRemove, showRemove }: Pet
         <div className="grid grid-cols-2 gap-2">
           <div>
             <Label htmlFor={`pet-${index}-especie`} className="text-xs font-medium">
-              Espécie *
+              Espécie
             </Label>
             <Select value={pet.especie} onValueChange={(v) => onPetChange(index, 'especie', v)}>
               <SelectTrigger id={`pet-${index}-especie`} className="mt-1 h-8">
@@ -133,7 +133,7 @@ function PetFormComponent({ pet, index, onPetChange, onRemove, showRemove }: Pet
 
           <div>
             <Label htmlFor={`pet-${index}-porte`} className="text-xs font-medium">
-              Porte *
+              Porte
             </Label>
             <Select value={pet.porte} onValueChange={(v) => onPetChange(index, 'porte', v)}>
               <SelectTrigger id={`pet-${index}-porte`} className="mt-1 h-8">
