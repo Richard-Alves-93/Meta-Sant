@@ -326,7 +326,10 @@ const PetModal = ({ open, onClose, onSave, editingPet, customers, products }: Pe
                             />
                           </div>
                           <div className="space-y-1 col-span-2">
-                            <label className="text-[10px] font-bold text-muted-foreground uppercase">Valor Pago (R$)</label>
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase">Valor Pago</label>
+                            <p className="text-[10px] text-muted-foreground leading-tight mb-1">
+                              Qual valor que o cliente pagou?
+                            </p>
                             <input
                               type="text"
                               placeholder="R$ 0,00"
