@@ -57,6 +57,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.setItem('google_provider_token', session.provider_token);
       }
 
+      if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('google_provider_token');
+      }
+
       setLoading(false);
     });
 
@@ -69,6 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signOut = async () => {
+    localStorage.removeItem('google_provider_token');
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
