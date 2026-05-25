@@ -11,8 +11,6 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   throw new Error('Supabase client requires VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to be set.');
 }
 
-console.log('SUPABASE URL ATUAL:', SUPABASE_URL);
-console.log('SUPABASE PROJECT ID ATUAL:', SUPABASE_URL?.match(/\/\/([^.]+)\./)?.[1]);
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
