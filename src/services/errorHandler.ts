@@ -243,6 +243,7 @@ export function handleSupabaseError(
  * Logger interno - centraliza todos os logs com prefix e formatação
  */
 function logOperation(status: 'START' | 'SUCCESS' | 'ERROR', operationName: string, context?: Record<string, any>) {
+  if (!import.meta.env.DEV) return;
   if (status === 'START') {
     console.log(`[CRM] ▶ ${operationName}${context ? ` | ${JSON.stringify(context)}` : ''}`);
   } else if (status === 'SUCCESS') {
@@ -254,20 +255,19 @@ function logOperation(status: 'START' | 'SUCCESS' | 'ERROR', operationName: stri
  * Log de erro com estrutura padronizada
  */
 function logError(error: CrmError) {
-  const errorLog = {
-    timestamp: new Date().toISOString(),
-    code: error.code,
-    message: error.message,
-    statusCode: error.statusCode,
-    context: error.context,
-    stack: error.stack,
-  };
-
-  console.error('[CRM] ✗ Error:', errorLog);
-
-  // Em produção, poderia enviar para serviço de logging
-  if (process.env.NODE_ENV === 'production') {
-    // TODO: Enviar para Sentry, LogRocket, etc
+  if (import.meta.env.DEV) {
+    const errorLog = {
+      timestamp: new Date().toISOString(),
+      code: error.code,
+      message: error.message,
+      statusCode: error.statusCode,
+      context: error.context,
+      stack: error.stack,
+    };
+    console.error('[CRM] ✗ Error:', errorLog);
+  } else {
+    // Production: log minimal info, strip stack/context/supabase payloads
+    console.error(`[CRM] Error ${error.code} (${error.statusCode})`);
   }
 }
 
