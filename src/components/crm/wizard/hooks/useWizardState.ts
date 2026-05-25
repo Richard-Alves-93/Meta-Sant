@@ -93,24 +93,18 @@ export function useWizardState(onClose: () => void) {
         toast.error("O nome do tutor é obrigatório.");
         return;
       }
-      if (!tutor.whatsapp.trim()) {
-        toast.error("O WhatsApp do tutor é obrigatório.");
-        return;
-      }
     }
 
     // Validar step 2
     if (step === 2) {
       const invalidPet = pets.find(p =>
         !p.nome.trim() ||
-        !p.especie ||
         !p.raca.trim() ||
-        !p.sexo ||
-        !p.porte
+        !p.sexo
       );
 
       if (invalidPet) {
-        toast.error("Nome, Espécie, Raça, Sexo e Porte são obrigatórios para todos os pets.");
+        toast.error("Nome, Raça e Sexo são obrigatórios para todos os pets.");
         return;
       }
     }

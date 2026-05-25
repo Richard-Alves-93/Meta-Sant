@@ -64,7 +64,7 @@ export function Step1Tutor({ tutor, onTutorChange }: Step1TutorProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="tutor-whatsapp" className="text-sm font-medium">
-              WhatsApp *
+              WhatsApp
             </Label>
             <Input
               id="tutor-whatsapp"
